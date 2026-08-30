@@ -4497,8 +4497,6 @@ if st.button(
     st.session_state.pending_question = None
     st.rerun()
 
-with st.popover("ⓘ", key="info_popover", width="content"):
-    st.markdown(help_text())
 
 
 # ============================================================

@@ -319,7 +319,7 @@ body[data-theme="dark"] .sc-fixed-brand-sub,
 .st-key-info_popover {
     position: fixed !important;
     top: 16px !important;
-    
+    left: 320px !important;
     z-index: 1000011 !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -379,7 +379,7 @@ body[data-theme="dark"] .st-key-info_popover button,
         display: none !important;
     }
     .st-key-info_popover {
-        
+        left: 320px !important;
     }
 }
 
@@ -4491,7 +4491,7 @@ if st.button(
     "🌱",
     key="reset_chat_button",
     type="tertiary",
-    help="",
+    help="Novo chat",
 ):
     st.session_state.messages = []
     st.session_state.pending_question = None

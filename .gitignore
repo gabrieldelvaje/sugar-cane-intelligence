@@ -1,0 +1,14 @@
+# Ambientes locais e caches
+.venv/
+.venv-1/
+__pycache__/
+*.py[cod]
+
+# Segredos locais
+.env
+.streamlit/secrets.toml
+
+# Arquivos temporários do sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/

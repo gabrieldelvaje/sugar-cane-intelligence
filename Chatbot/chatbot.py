@@ -4576,7 +4576,7 @@ for message in st.session_state.messages:
 # INPUT
 # ============================================================
 
-input_placeholder = "Pergunte sobre produção, produtividade, clima ou municípios..."
+input_placeholder = "Pergunte sobre produção, clima ou municípios..."
 
 prompt = st.chat_input(input_placeholder)
 

@@ -4664,7 +4664,7 @@ if prompt:
 st.markdown(
     '<div class="sc-footer">'
     '<b>Sugar Cane Intelligence</b> '
-    '&middot; Deselvovido por Gabriel Delvaje'
+    '&middot; Deselvolvido por Gabriel Delvaje'
     '</div>',
     unsafe_allow_html=True,
 )

@@ -379,7 +379,7 @@ body[data-theme="dark"] .st-key-info_popover button,
         display: none !important;
     }
     .st-key-info_popover {
-        left: 184px !important;
+        
     }
 }
 
@@ -4491,7 +4491,7 @@ if st.button(
     "🌱",
     key="reset_chat_button",
     type="tertiary",
-    help="left: 184px !important;",
+    help="",
 ):
     st.session_state.messages = []
     st.session_state.pending_question = None

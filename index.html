@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Análises municipais de cana-de-açúcar, produção e clima no Brasil.">
+  <title>Sugar Cane Intelligence</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="brand-icon" id="new-chat" title="Novo chat" aria-label="Novo chat">🌱</button>
+    <div class="brand-copy"><strong>Sugar Cane Intelligence</strong><span>Desenvolvido por Gabriel Delvaje</span></div>
+    <button class="theme-button" id="theme-toggle" aria-label="Alternar tema">◐</button>
+  </header>
+  <main class="page-shell">
+    <section class="hero" id="home-hero">
+      <p class="eyebrow">ANÁLISE MUNICIPAL DE CANA-DE-AÇÚCAR</p>
+      <h1>O que você quer saber sobre a cana?</h1>
+      <p>Consulte produção, área, produtividade, temperatura, chuva, municípios e períodos.</p>
+      <div class="suggestions" id="suggestions">
+        <button>Qual município teve maior produção?</button>
+        <button>Quais são os 5 maiores produtores de São Paulo?</button>
+        <button>Compare Piracicaba e Ribeirão Preto entre 2010 e 2024.</button>
+        <button>Qual município teve maior precipitação em 2024?</button>
+      </div>
+    </section>
+    <section class="status-card" id="loading-card" aria-live="polite"><span class="loader"></span><div><strong>Carregando base integrada</strong><small>PAM/IBGE + CRU TS, de 1974 a 2024.</small></div></section>
+    <section id="conversation" class="conversation" aria-live="polite"></section>
+  </main>
+  <form class="question-bar" id="question-form">
+    <label class="sr-only" for="question">Sua pergunta</label>
+    <input id="question" autocomplete="off" placeholder="Pergunte sobre produção, clima ou municípios...">
+    <button type="submit" aria-label="Enviar pergunta">↑</button>
+  </form>
+  <template id="message-template"><article class="message"><div class="message-icon"></div><div class="message-content"></div></article></template>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

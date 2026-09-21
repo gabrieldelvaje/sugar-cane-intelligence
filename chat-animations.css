@@ -1,103 +1,67 @@
-/* Keep the first chat message next to the input, even when the home hero vanishes. */
-body.chat-started .page-shell {
+/* Bottom-anchored chat layout. Keep the first question just above the fixed input. */
+.page-shell.chat-started {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   min-height: calc(100dvh - 72px);
   padding-top: 24px;
-  padding-bottom: calc(106px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 132px;
 }
-
-body.chat-started .conversation {
+.page-shell.chat-started #conversation {
   width: 100%;
   margin-top: auto;
 }
-
-.message.chat-question-enter {
-  animation: chat-question-rise 380ms cubic-bezier(.2,.75,.25,1) both;
-}
-
-.message.chat-answer-pending { display: none; }
-
-.message.chat-answer-streaming {
-  animation: chat-answer-appear 300ms cubic-bezier(.2,.75,.25,1) both;
-}
-
-.message.chat-answer-complete > .message-content > .kpis,
-.message.chat-answer-complete > .message-content > .table-wrap,
-.message.chat-answer-complete > .message-content > .follow-up-suggestions {
-  animation: chat-answer-appear 330ms ease-out both;
-}
-
-@keyframes chat-question-rise {
-  from { opacity: 0; transform: translateY(26px) scale(.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes chat-answer-appear {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Just three animated dots: no visible 'analyzing' label or extra chat icon. */
-.chat-typing-message {
-  grid-template-columns: 1fr;
-  padding-left: 56px;
-}
-
-.chat-typing-message .message-content {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.conversation .message.user {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  gap: 12px;
   width: fit-content;
-  min-width: 62px;
+  max-width: min(88%, 780px);
+  margin-left: auto;
+}
+.conversation .message.user .message-icon {
+  flex: 0 0 36px;
+}
+.conversation .message.user .message-content {
+  min-width: 0;
+  max-width: calc(100% - 48px);
+  overflow-wrap: anywhere;
+  border-radius: 16px 4px 16px 16px;
+}
+.conversation .message.user .message-content p { margin: 0; line-height: 1.5; }
+.conversation .message.assistant { min-width: 0; }
+.conversation .message.assistant .message-content { min-width: 0; }
+.conversation .message.chat-typing-message .message-content {
+  display: flex;
+  align-items: center;
+  width: fit-content;
   min-height: 43px;
-  padding: 12px 15px;
+  padding: 12px 16px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 5px 16px 16px 16px;
   background: var(--surface);
 }
-
-.typing-dots {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 16px;
-}
-
-.typing-dots i {
-  display: block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+.chat-typing-dots { display: inline-flex; align-items: center; gap: 6px; height: 16px; }
+.chat-typing-dots i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); opacity: .4; }
+.chat-deferred { display: none !important; }
+.chat-stream-cursor {
+  display: inline-block;
+  height: .95em;
+  width: 2px;
+  margin-left: 2px;
+  vertical-align: -.12em;
   background: var(--brand);
-  opacity: .42;
-  animation: chat-dot-hop 480ms ease-in-out 3 both;
-  animation-play-state: paused;
+  animation: chat-cursor-blink .75s step-end infinite;
 }
-
-.chat-typing-active .typing-dots i { animation-play-state: running; }
-.typing-dots i:nth-child(2) { animation-delay: 100ms; }
-.typing-dots i:nth-child(3) { animation-delay: 200ms; }
-
-@keyframes chat-dot-hop {
-  0%, 100% { opacity: .42; transform: translateY(0); }
-  50% { opacity: 1; transform: translateY(-5px); }
-}
-
+@keyframes chat-cursor-blink { 50% { opacity: 0; } }
+.question-bar button:disabled { opacity: .65; cursor: wait; }
 @media (max-width: 650px) {
-  body.chat-started .page-shell {
-    padding-top: 16px;
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  }
-  .chat-typing-message { padding-left: 41px; }
-  .chat-typing-message .message-content { min-height: 40px; padding: 10px 13px; }
+  .page-shell.chat-started { padding-top: 16px; padding-bottom: 127px; }
+  .conversation .message.user { max-width: 94%; gap: 8px; }
+  .conversation .message.user .message-icon { flex-basis: 32px; }
+  .conversation .message.user .message-content { max-width: calc(100% - 40px); }
 }
-
 @media (prefers-reduced-motion: reduce) {
-  .message.chat-question-enter,
-  .message.chat-answer-streaming,
-  .message.chat-answer-complete > .message-content > .kpis,
-  .message.chat-answer-complete > .message-content > .table-wrap,
-  .message.chat-answer-complete > .message-content > .follow-up-suggestions,
-  .typing-dots i { animation: none !important; }
+  .chat-stream-cursor { animation: none; }
 }

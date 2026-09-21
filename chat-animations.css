@@ -68,3 +68,33 @@
 @media (prefers-reduced-motion: reduce) {
   .chat-stream-cursor { animation: none; }
 }
+
+/* Standalone emoji avatars and a clearly differentiated user bubble. */
+.conversation .message.user .message-icon,
+.conversation .message.assistant .message-icon {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: inherit;
+  font-size: 25px;
+}
+.conversation .message.user .message-content {
+  background: #e7f2ff;
+  border-color: #bddbff;
+  color: #153453;
+}
+[data-theme="dark"] .conversation .message.user .message-content {
+  background: #17334c;
+  border-color: #315b81;
+  color: #eff6ff;
+}
+
+/* Preserve the input's idle appearance and highlight only while focused. */
+.question-bar {
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.question-bar:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+}

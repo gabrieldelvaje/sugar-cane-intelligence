@@ -20,9 +20,7 @@
   max-width: min(88%, 780px);
   margin-left: auto;
 }
-.conversation .message.user .message-icon {
-  flex: 0 0 36px;
-}
+.conversation .message.user .message-icon { flex: 0 0 36px; }
 .conversation .message.user .message-content {
   min-width: 0;
   max-width: calc(100% - 48px);
@@ -56,11 +54,16 @@
 }
 @keyframes chat-cursor-blink { 50% { opacity: 0; } }
 .question-bar button:disabled { opacity: .65; cursor: wait; }
+.chat-motion-toggle { display: grid; place-items: center; flex: 0 0 36px; margin-left: auto; font-size: 17px; }
+.topbar .theme-button:not(.chat-motion-toggle) { margin-left: 0; flex: 0 0 36px; }
 @media (max-width: 650px) {
   .page-shell.chat-started { padding-top: 16px; padding-bottom: 127px; }
   .conversation .message.user { max-width: 94%; gap: 8px; }
   .conversation .message.user .message-icon { flex-basis: 32px; }
   .conversation .message.user .message-content { max-width: calc(100% - 40px); }
+  .chat-motion-toggle, .topbar .theme-button:not(.chat-motion-toggle) { width: 32px; height: 32px; flex-basis: 32px; }
+  .topbar .brand-copy { min-width: 0; }
+  .topbar .brand-copy strong, .topbar .brand-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   .chat-stream-cursor { animation: none; }

@@ -1,34 +1,37 @@
-/* Sugestões de perguntas como texto clicável, sem cápsulas ou preenchimento. */
+/* Sugestões como cápsulas com extremidades totalmente arredondadas. */
 .suggestions,
 .follow-up-suggestions {
-  column-gap: 28px;
+  column-gap: 12px;
   row-gap: 12px;
 }
 .suggestions button,
 .follow-up-suggestions button {
   display: block;
-  min-height: 0;
-  padding: 6px 2px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 20px;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  background: var(--surface);
   box-shadow: none;
   color: var(--text);
   text-align: left;
-  line-height: 1.5;
+  line-height: 1.45;
   cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 .suggestions button:hover,
 .follow-up-suggestions button:hover {
-  color: var(--brand);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  border-color: var(--brand);
+  background: var(--surface2);
+  color: var(--text);
+  text-decoration: none;
 }
 .suggestions button:focus-visible,
 .follow-up-suggestions button:focus-visible {
   outline: 2px solid var(--brand);
-  outline-offset: 4px;
-  border-radius: 2px;
+  outline-offset: 3px;
+  border-radius: 9999px;
 }
-/* O botão de tema deve permanecer à direita após retirar o de animações. */
+/* Manter apenas o botão de tema alinhado à direita. */
 .topbar #theme-toggle { margin-left: auto; }

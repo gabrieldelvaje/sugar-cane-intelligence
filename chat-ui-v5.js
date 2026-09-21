@@ -32,29 +32,8 @@
   let busy = false;
   let previous = [];
   const animations = new Set();
-
-  // Motion is a site preference: an OS-level setting on Windows/Chrome must
-  // not silently skip the entire conversation. Visitors can turn it off here.
-  const motionKey = 'sci-chat-motion';
-  let motionOn = true;
-  try { motionOn = localStorage.getItem(motionKey) !== 'off'; } catch (_) { /* Local preview without storage. */ }
-  const motionButton = document.createElement('button');
-  motionButton.type = 'button';
-  motionButton.id = 'chat-motion-toggle';
-  motionButton.className = 'theme-button chat-motion-toggle';
-  function syncMotion() {
-    motionButton.textContent = motionOn ? '✦' : '✧';
-    motionButton.title = motionOn ? 'Desativar animações do chat' : 'Ativar animações do chat';
-    motionButton.setAttribute('aria-label', motionButton.title);
-    motionButton.setAttribute('aria-pressed', String(motionOn));
-  }
-  syncMotion();
-  document.querySelector('#theme-toggle')?.before(motionButton);
-  motionButton.addEventListener('click', () => {
-    motionOn = !motionOn;
-    try { localStorage.setItem(motionKey, motionOn ? 'on' : 'off'); } catch (_) { /* Preview. */ }
-    syncMotion();
-  });
+  // Animation is always on. Keep only the light/dark theme control in the header.
+  const motionOn = true;
 
   function bottom() {
     // Repeated smooth scrolling on every token makes Chrome lag and jump.

@@ -1,5 +1,5 @@
-/* Generate clickable suggestions from municipalities, states, metrics and years
-   that actually occur in the loaded dataset. Keep the existing chat animations. */
+/* Generate clickable suggestions using municipalities, states, metrics and years
+   in the loaded dataset. Comparison suggestions require two positive results. */
 (() => {
   'use strict';
   const conversation = document.querySelector('#conversation');
@@ -14,7 +14,6 @@
     ['productivity', 'produtividade'], ['precipitation', 'precipitação'],
     ['temperature', 'temperatura média']
   ];
-  // These names are recognized by the app's existing state filter.
   const states = [
     ['SP', 'São Paulo'], ['MG', 'Minas Gerais'], ['GO', 'Goiás'],
     ['PR', 'Paraná'], ['MT', 'Mato Grosso'], ['PE', 'Pernambuco'],
@@ -72,6 +71,34 @@
       !normalized.includes('para');
   }
 
+  // Aggregate exactly as the chatbot does: production=sum, area=max,
+  // productivity/precipitation/temperature=mean. A positive individual row
+  // does not by itself guarantee a positive aggregate across a chosen period.
+  function positiveComparisonCities(metric, uf, from, to) {
+    const summary = new Map();
+    for (const row of state.rows) {
+      if (String(row.uf).trim().toUpperCase() !== uf ||
+          row.year < from || row.year > to || !Number.isFinite(row[metric])) continue;
+      const name = row.municipality;
+      let item = summary.get(name);
+      if (!item) {
+        item = { sum: 0, count: 0, max: -Infinity, years: new Set() };
+        summary.set(name, item);
+      }
+      item.sum += row[metric];
+      item.count++;
+      item.max = Math.max(item.max, row[metric]);
+      item.years.add(row.year);
+    }
+    const aggregateType = info[metric].agg;
+    return shuffle([...summary].filter(([name, item]) => {
+      const value = aggregateType === 'sum' ? item.sum
+        : aggregateType === 'max' ? item.max : item.sum / item.count;
+      return item.years.size >= 2 && Number.isFinite(value) && value > 0 &&
+        unambiguousCity(name);
+    }).map(([name]) => name));
+  }
+
   function makeQuestion(type) {
     const [metric, label] = pick(metrics);
     const [uf, stateLabel] = pick(states);
@@ -116,17 +143,12 @@
       const [from, to] = Math.random() < .4
         ? pick([[2000, 2020], [2010, 2024]])
         : (() => { const start = randomYear(2000, 2018); return [start, randomYear(start + 3, 2024)]; })();
-      const frequency = new Map();
-      for (let year = from; year <= to; year++) {
-        for (const city of index.get(key(metric, year, uf)) || []) {
-          if (unambiguousCity(city)) frequency.set(city, (frequency.get(city) || 0) + 1);
-        }
-      }
-      const cities = shuffle([...frequency].filter(([, count]) => count >= 2).map(([name]) => name));
+      const cities = positiveComparisonCities(metric, uf, from, to);
       if (cities.length < 2) return null;
       const first = cities[0];
       for (const second of cities.slice(1, 30)) {
         const question = `Compare a ${label} de ${first} e ${second} entre ${from} e ${to}.`;
+        // Ensure the municipality parser will actually compare this exact pair.
         if (typeof places !== 'function') return question;
         const matched = places(question);
         if (matched.length === 2 && matched.includes(first) && matched.includes(second)) return question;
@@ -166,7 +188,7 @@
     const questions = generate(2, asked);
     if (questions.length !== 2) return;
     buttons.forEach((old, i) => {
-      const button = old.cloneNode(false); // Drop the old fixed-question click handler.
+      const button = old.cloneNode(false);
       button.textContent = questions[i];
       button.type = 'button';
       button.addEventListener('click', () => submitSuggested(questions[i]));
@@ -174,15 +196,12 @@
     });
   }
 
-  // The existing chat controller inserts its two buttons after the animated
-  // reply. Swap them in the same frame without changing its animation flow.
   new MutationObserver(() => {
     for (const group of conversation.querySelectorAll('.follow-up-suggestions:not([data-randomized])')) {
       enhanceGroup(group);
     }
   }).observe(conversation, { childList: true, subtree: true });
 
-  // Keep four opening suggestions, but vary their variables after the base loads.
   let checks = 0;
   function refreshOpening() {
     if (hero.hidden) return;

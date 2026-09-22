@@ -1,18 +1,71 @@
-/* Dark-mode floating surfaces: remove the green-tinted shadows cast by
-   color-mix(... var(--text) ...). Keep panel borders, focus outlines and
-   the existing slide / tooltip positioning and animations unchanged. */
+/* Floating UI remains flat in dark mode: no drop shadows, glows, or
+   shadow-like filters. This file is loaded after the component styles so
+   it also overrides their hover/open/focus states without changing motion. */
 [data-theme="dark"] :is(
   .question-builder-panel,
+  .sci-language-control,
+  .sci-language-toggle,
   .sci-language-menu,
+  .question-bar,
   .qb-city-results,
+  .qb-wizard-results,
   .historical-chart-tooltip,
-  [role="tooltip"]
-) {
+  .popover,
+  .popover-content,
+  .tooltip,
+  .dropdown-menu,
+  [role="dialog"],
+  [role="menu"],
+  [role="listbox"],
+  [role="tooltip"],
+  [popover]
+),
+[data-theme="dark"] :is(
+  .question-builder-panel,
+  .sci-language-control,
+  .sci-language-toggle,
+  .sci-language-menu,
+  .question-bar,
+  .qb-city-results,
+  .qb-wizard-results,
+  .historical-chart-tooltip,
+  .popover,
+  .popover-content,
+  .tooltip,
+  .dropdown-menu,
+  [role="dialog"],
+  [role="menu"],
+  [role="listbox"],
+  [role="tooltip"],
+  [popover]
+)::before,
+[data-theme="dark"] :is(
+  .question-builder-panel,
+  .sci-language-control,
+  .sci-language-toggle,
+  .sci-language-menu,
+  .question-bar,
+  .qb-city-results,
+  .qb-wizard-results,
+  .historical-chart-tooltip,
+  .popover,
+  .popover-content,
+  .tooltip,
+  .dropdown-menu,
+  [role="dialog"],
+  [role="menu"],
+  [role="listbox"],
+  [role="tooltip"],
+  [popover]
+)::after {
   box-shadow: none !important;
-  filter: none;
+  filter: none !important;
+  -webkit-filter: none !important;
 }
 
-/* The question builder's screen overlay must not tint the surroundings green. */
+/* The question builder's screen overlay must not tint its surroundings green.
+   This is a neutral backdrop, not a projected shadow from the panel. */
 [data-theme="dark"] .question-builder-backdrop:not([hidden]) {
   background: rgba(0, 0, 0, 0.12);
+  box-shadow: none !important;
 }

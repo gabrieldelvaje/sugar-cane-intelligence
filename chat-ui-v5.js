@@ -318,7 +318,7 @@
       const exitProgress = submitClamp(
         initialArc / (SUBMIT_EXIT_JOIN_LENGTH * 1.15)
       );
-      const exitBoost = 1 + .75 * (1 - submitEase(exitProgress));
+      const exitBoost = 1 + 1.25 * (1 - submitEase(exitProgress));
 
       const speedFactor = (1 + .28 * gravityPhase) * exitBoost;
       submitLoaderDistance += baseSpeed * speedFactor * delta;

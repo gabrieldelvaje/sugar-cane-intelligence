@@ -35,12 +35,17 @@
       const value = card?.querySelector('strong')?.textContent?.trim();
       if (!city || !value) return html;
       const date = typeof years === 'function' ? years(question) : {};
-      const period = date.f && date.t
-        ? (date.f === date.t ? `em ${date.f}` : `entre ${date.f} e ${date.t}`)
-        : 'na série disponível';
+      const periodHtml = date.f && date.t
+        ? (date.f === date.t
+          ? `em <strong>${esc(date.f)}</strong>`
+          : `entre <strong>${esc(date.f + ' e ' + date.t)}</strong>`)
+        : 'na <strong>série disponível</strong>';
       const introduction = document.createElement('p');
       introduction.className = 'answer';
-      introduction.textContent = `Na análise de ${label} ${period}, o município com maior valor é ${city}, com ${value}.`;
+      introduction.innerHTML =
+        `Na análise de <strong>${esc(label)}</strong> ${periodHtml}, ` +
+        `o município com maior valor é <strong>${esc(city)}</strong>, ` +
+        `com <strong>${esc(value)}</strong>.`;
       heading.after(introduction);
     } else if (title === 'Resultado' && paragraph) {
       paragraph.innerHTML = `No ranking de <strong>${esc(label)}</strong>, ` +

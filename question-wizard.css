@@ -131,6 +131,12 @@
 [data-theme="dark"] .question-builder-panel .qb-wizard-next { color: #102618; }
 .question-builder-panel .qb-wizard-nav button:disabled { opacity: .45; cursor: wait; }
 @media(max-width:650px) {
+  /* Let short steps stay compact; long steps can grow up to the header. */
+  .question-builder-panel {
+    height: auto;
+    min-height: 0;
+    max-height: calc(100dvh - 164px);
+  }
   .qb-wizard-progress { padding: 11px 15px 0; }
   .qb-wizard-view { padding: 11px 15px 14px; }
   .qb-wizard-view h3 { margin-bottom: 12px; font-size: 18px; }

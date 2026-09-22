@@ -1,67 +1,82 @@
-/* Dynamic follow-ups can be appended directly to a message-content node, before
-   the general interface observer sees a mutation inside the suggestion group. */
+/* Translate follow-ups after their generator and UF-labeling routines settle.
+   Observe structural insertions only: listening to every text change caused
+   competing English translation observers to rewrite the same node forever. */
 (() => {
   'use strict';
   const i18n = window.SCIi18n;
   const conversation = document.querySelector('#conversation');
-  const form = document.querySelector('#question-form');
-  const submit = form?.querySelector('button[type="submit"]');
+  const submit = document.querySelector('#question-form button[type="submit"]');
   if (!i18n || !conversation || !submit) return;
 
-  function translateFollowup(group) {
+  function sourceQuestion(button) {
+    const current = button.textContent.trim();
+    const fromData = button.dataset.question;
+    if (/^(?:Qual|Quais|Compare a)\b/i.test(current)) return current;
+    if (fromData && /^(?:Qual|Quais|Compare a)\b/i.test(fromData)) {
+      return /\([A-Z]{2}\)/.test(current) && !/\([A-Z]{2}\)/.test(fromData)
+        ? i18n.toPortugueseQuestion(current) : fromData;
+    }
+    return i18n.toPortugueseQuestion(current);
+  }
+
+  function translateGroup(group, force = false) {
     if (!group.isConnected) return;
     const english = i18n.get() === 'en';
-    const heading = group.querySelector('.follow-up-label');
-    if (heading) {
-      if (!heading.dataset.originalPt) {
-        const current = heading.textContent.trim();
-        heading.dataset.originalPt = current === 'You can also ask'
+    const label = group.querySelector('.follow-up-label');
+    if (label) {
+      if (!label.dataset.sourcePt) {
+        label.dataset.sourcePt = label.textContent.trim() === 'You can also ask'
           ? 'Você também pode perguntar'
-          : current === 'Try a comparison with values greater than zero:'
-            ? 'Experimente uma comparação com valores maiores que zero:' : current;
+          : label.textContent.trim().startsWith('Try a comparison')
+            ? 'Experimente uma comparação com valores maiores que zero:'
+            : label.textContent.trim();
       }
-      const original = heading.dataset.originalPt;
-      const translated = original.startsWith('Experimente ')
+      const source = label.dataset.sourcePt;
+      const target = english ? (source.startsWith('Experimente ')
         ? 'Try a comparison with values greater than zero:'
-        : original === 'Você também pode perguntar' ? 'You can also ask' : original;
-      const expected = english ? translated : original;
-      if (heading.textContent !== expected) heading.textContent = expected;
+        : source === 'Você também pode perguntar' ? 'You can also ask' : source) : source;
+      if (label.textContent.trim() !== target) label.textContent = target;
     }
     for (const button of group.querySelectorAll('button')) {
-      if (!button.dataset.originalPt) {
-        const original = button.dataset.question &&
-          /^(?:Qual|Quais|Compare a)\b/i.test(button.dataset.question)
-          ? button.dataset.question : button.textContent.trim();
-        // Another observer may have already translated the button. Recover a
-        // Portuguese question for switching back without changing the data.
-        button.dataset.originalPt = /^(?:Qual|Quais|Compare a)\b/i.test(original)
-          ? original : i18n.toPortugueseQuestion(original);
+      if (!button.dataset.sourcePt) button.dataset.sourcePt = sourceQuestion(button);
+      const source = button.dataset.sourcePt;
+      const target = english ? i18n.toEnglishQuestion(source) : source;
+      const current = button.textContent.trim();
+      // Preserve a state abbreviation added by the other observer after
+      // translation instead of repeatedly removing and reintroducing it.
+      if (!force && english && current !== target && /\([A-Z]{2}\)/.test(current)
+          && !/\([A-Z]{2}\)/.test(target)) {
+        button.dataset.sourcePt = i18n.toPortugueseQuestion(current);
+        continue;
       }
-      const original = button.dataset.originalPt;
-      const expected = english ? i18n.toEnglishQuestion(original) : original;
-      if (button.textContent.trim() !== expected) button.textContent = expected;
+      if (current !== target) button.textContent = target;
     }
   }
 
-  function syncFollowups() {
-    conversation.querySelectorAll('.follow-up-suggestions').forEach(translateFollowup);
+  const pending = new Set();
+  function schedule(group) {
+    if (!group || pending.has(group)) return;
+    pending.add(group);
+    requestAnimationFrame(() => {
+      pending.delete(group);
+      translateGroup(group);
+    });
   }
 
-  const observer = new MutationObserver(records => {
-    if (!records.some(record => {
-      const root = record.target.nodeType === Node.ELEMENT_NODE
-        ? record.target : record.target.parentElement;
-      if (root?.closest('.follow-up-suggestions')) return true;
-      return [...record.addedNodes].some(node => node.nodeType === Node.ELEMENT_NODE &&
-        (node.matches('.follow-up-suggestions') || node.querySelector('.follow-up-suggestions')));
-    })) return;
-    syncFollowups();
-  });
-  observer.observe(conversation, { childList: true, subtree: true, characterData: true });
+  new MutationObserver(records => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        if (node.matches('.follow-up-suggestions')) schedule(node);
+        else {
+          const parent = node.closest('.follow-up-suggestions');
+          if (parent) schedule(parent);
+          node.querySelectorAll('.follow-up-suggestions').forEach(schedule);
+        }
+      }
+    }
+  }).observe(conversation, { childList: true, subtree: true });
 
-  // In the uncommon case of submitting before the dataset is ready, the chat
-  // controller creates a built-in Portuguese error without calling answer().
-  // Wait until its typing animation has completed before translating it.
   function translateLoadingError() {
     if (i18n.get() !== 'en' || submit.disabled) return;
     conversation.querySelectorAll('.chat-response .error').forEach(error => {
@@ -75,11 +90,9 @@
   });
   document.querySelectorAll('.sci-language-menu [data-language]').forEach(button => {
     button.addEventListener('click', () => {
-      // The main language handler runs first, then restore/retranslate every
-      // existing group, including those created while an answer was streaming.
-      syncFollowups();
+      conversation.querySelectorAll('.follow-up-suggestions').forEach(group => translateGroup(group, true));
       translateLoadingError();
     });
   });
-  syncFollowups();
+  conversation.querySelectorAll('.follow-up-suggestions').forEach(schedule);
 })();

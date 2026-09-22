@@ -255,6 +255,29 @@
     return -Math.PI / 2 + arc / SUBMIT_RADIUS;
   }
 
+  function submitOrbitVisibleLength(distance) {
+    const arc = Math.max(0, distance - SUBMIT_ARROW_LENGTH);
+    const angle = -Math.PI / 2 + arc / SUBMIT_RADIUS;
+    const gravityPhase = Math.cos(angle);
+
+    // Roughly 75% of the circumference stays occupied by the arrow,
+    // leaving about a quarter-circle gap between tail and tip.
+    const orbitBaseLength = SUBMIT_CIRCUMFERENCE * .75;
+    const gravityStretch = gravityPhase >= 0
+      ? 1.25 * gravityPhase
+      : .45 * gravityPhase;
+    const orbitTargetLength = orbitBaseLength + gravityStretch;
+
+    // Grow from the idle arrow into the long circular body smoothly
+    // during the first part of the initial orbit only.
+    const enterMix = submitEase(
+      submitClamp(arc / (SUBMIT_CIRCUMFERENCE * .18))
+    );
+
+    return SUBMIT_ARROW_LENGTH +
+      (orbitTargetLength - SUBMIT_ARROW_LENGTH) * enterMix;
+  }
+
   function startSubmitSnakeOrbit() {
     if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
 
@@ -277,11 +300,8 @@
       const speedFactor = 1 + .28 * gravityPhase;
       submitLoaderDistance += baseSpeed * speedFactor * delta;
 
-      // Keep the arrow visibly longer throughout the orbit.
-      // It still stretches on the descent, but stays fairly long on the climb.
-      const orbitLengthBase = SUBMIT_ARROW_LENGTH + 2.2;
       submitLoaderVisibleLength =
-        orbitLengthBase + 1.1 * gravityPhase;
+        submitOrbitVisibleLength(submitLoaderDistance);
 
       renderSubmitSnake(
         submitOrbitPoint,
@@ -306,10 +326,15 @@
     if (targetArc <= currentArc + .35) targetArc += SUBMIT_CIRCUMFERENCE;
 
     const startDistance = submitLoaderDistance;
-    const startVisibleLength = submitLoaderVisibleLength || SUBMIT_ARROW_LENGTH;
     const targetDistance = SUBMIT_ARROW_LENGTH + targetArc;
-    const travel = targetDistance - startDistance;
-    const duration = Math.max(250, Math.min(470, 230 + travel * 9));
+    const orbitTravel = targetDistance - startDistance;
+    const returnTravel = SUBMIT_ARROW_LENGTH;
+    const totalTravel = orbitTravel + returnTravel;
+    const bottomVisibleLength = submitOrbitVisibleLength(targetDistance);
+
+    // One continuous accelerated finish: complete the circle and immediately
+    // flow through the bottom fillet back up the Y axis, with no pause.
+    const duration = Math.max(360, Math.min(620, 300 + totalTravel * 5.2));
 
     await new Promise(resolve => {
       const started = performance.now();
@@ -321,21 +346,41 @@
         }
 
         const raw = submitClamp((now - started) / duration);
-        const progress = raw < .72
-          ? .82 * Math.pow(raw / .72, 1.55)
-          : .82 + .18 * submitEaseOut((raw - .72) / .28);
 
-        submitLoaderDistance = startDistance + travel * progress;
-        const scale = 1 + .085 * Math.sin(Math.PI * raw);
-        const visibleLength = startVisibleLength +
-          (SUBMIT_ARROW_LENGTH - startVisibleLength) * submitEase(raw);
+        // Non-zero starting velocity, then progressively faster toward the end.
+        const progress = .72 * raw + .28 * raw * raw;
+        const travelled = totalTravel * progress;
 
-        renderSubmitSnake(
-          submitOrbitPoint,
-          submitLoaderDistance,
-          scale,
-          visibleLength
-        );
+        if (travelled <= orbitTravel) {
+          const headDistance = startDistance + travelled;
+          submitLoaderDistance = headDistance;
+          submitLoaderVisibleLength = submitOrbitVisibleLength(headDistance);
+
+          renderSubmitSnake(
+            submitOrbitPoint,
+            headDistance,
+            1,
+            submitLoaderVisibleLength
+          );
+        } else {
+          const returnDistance = Math.min(
+            returnTravel,
+            travelled - orbitTravel
+          );
+          const returnMix = submitEase(returnDistance / returnTravel);
+          const visibleLength = bottomVisibleLength +
+            (SUBMIT_ARROW_LENGTH - bottomVisibleLength) * returnMix;
+
+          submitLoaderDistance = targetDistance;
+          submitLoaderVisibleLength = visibleLength;
+
+          renderSubmitSnake(
+            submitFinishPoint,
+            returnDistance,
+            1,
+            visibleLength
+          );
+        }
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -347,35 +392,13 @@
     if (!submitLoaderElement) return;
 
     submitLoaderDistance = targetDistance;
-    renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
-
-    // The head is now at y = -1 (the visual bottom). From this exact point it
-    // climbs the Y axis while the curved body follows behind like a snake.
-    await new Promise(resolve => {
-      const started = performance.now();
-      const duration = 390;
-
-      const frame = now => {
-        if (!submitLoaderElement) {
-          resolve();
-          return;
-        }
-
-        const raw = submitClamp((now - started) / duration);
-        const progress = submitEase(raw) * SUBMIT_ARROW_LENGTH;
-
-        renderSubmitSnake(submitFinishPoint, progress, 1);
-
-        if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
-        else resolve();
-      };
-
-      submitLoaderRaf = requestAnimationFrame(frame);
-    });
-
-    if (!submitLoaderElement) return;
-
-    renderSubmitSnake(submitFinishPoint, SUBMIT_ARROW_LENGTH, 1);
+    submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
+    renderSubmitSnake(
+      submitFinishPoint,
+      SUBMIT_ARROW_LENGTH,
+      1,
+      SUBMIT_ARROW_LENGTH
+    );
   }
 
   async function setSubmitLoading(loading, instant = false) {

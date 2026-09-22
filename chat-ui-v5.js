@@ -62,8 +62,10 @@
   // Rounded joins between the Y axis and the circular orbit.
   // The tip keeps its original top/bottom points, but leaves/enters them
   // through a cubic fillet instead of a hard 90-degree corner.
-  const SUBMIT_JOIN_LENGTH = 3.2;
-  const SUBMIT_JOIN_HANDLE = 1.6;
+  const SUBMIT_EXIT_JOIN_LENGTH = 5.2;
+  const SUBMIT_EXIT_JOIN_HANDLE = 2.8;
+  const SUBMIT_RETURN_JOIN_LENGTH = 3.2;
+  const SUBMIT_RETURN_JOIN_HANDLE = 1.6;
 
   function submitCubicPoint(p0, p1, p2, p3, t) {
     const u = 1 - t;
@@ -89,9 +91,9 @@
 
     // Leave y = +1 continuously: keep the exact top point, continue upward
     // for a moment, then bend into the circle with matching circle tangent.
-    if (arc < SUBMIT_JOIN_LENGTH) {
-      const t = submitClamp(arc / SUBMIT_JOIN_LENGTH);
-      const endAngle = -Math.PI / 2 + SUBMIT_JOIN_LENGTH / SUBMIT_RADIUS;
+    if (arc < SUBMIT_EXIT_JOIN_LENGTH) {
+      const t = submitClamp(arc / SUBMIT_EXIT_JOIN_LENGTH);
+      const endAngle = -Math.PI / 2 + SUBMIT_EXIT_JOIN_LENGTH / SUBMIT_RADIUS;
       const p0 = [0, -SUBMIT_RADIUS];
       const p3 = [
         Math.cos(endAngle) * SUBMIT_RADIUS,
@@ -100,8 +102,8 @@
       const tangent = [-Math.sin(endAngle), Math.cos(endAngle)];
       const p1 = [0, -SUBMIT_RADIUS - SUBMIT_JOIN_HANDLE];
       const p2 = [
-        p3[0] - tangent[0] * SUBMIT_JOIN_HANDLE,
-        p3[1] - tangent[1] * SUBMIT_JOIN_HANDLE
+        p3[0] - tangent[0] * SUBMIT_EXIT_JOIN_HANDLE,
+        p3[1] - tangent[1] * SUBMIT_EXIT_JOIN_HANDLE
       ];
       return submitCubicPoint(p0, p1, p2, p3, t);
     }
@@ -124,11 +126,11 @@
 
     // Return from y = -1 through the same kind of rounded fillet. The orbit
     // arrives horizontally and the curve turns it smoothly upward into Y.
-    if (distance < SUBMIT_JOIN_LENGTH) {
-      const t = submitClamp(distance / SUBMIT_JOIN_LENGTH);
+    if (distance < SUBMIT_RETURN_JOIN_LENGTH) {
+      const t = submitClamp(distance / SUBMIT_RETURN_JOIN_LENGTH);
       const p0 = [0, SUBMIT_RADIUS];
-      const p1 = [-SUBMIT_JOIN_HANDLE, SUBMIT_RADIUS];
-      const p3 = [0, SUBMIT_RADIUS - SUBMIT_JOIN_LENGTH];
+      const p1 = [-SUBMIT_RETURN_JOIN_HANDLE, SUBMIT_RADIUS];
+      const p3 = [0, SUBMIT_RADIUS - SUBMIT_RETURN_JOIN_LENGTH];
       const p2 = [0, p3[1] + SUBMIT_JOIN_HANDLE];
       return submitCubicPoint(p0, p1, p2, p3, t);
     }

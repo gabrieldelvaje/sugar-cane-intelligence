@@ -1,11 +1,11 @@
-/* Neutral, softly layered builder surfaces in light mode only.
-   Scoped to the builder so the dark theme, chat and slide motion are unchanged. */
+/* The light builder uses visibly gray, neutral layers instead of white cards.
+   Keep the dark palette, green action buttons and slide motion untouched. */
 :root:not([data-theme="dark"]) .question-builder-panel {
-  --qb-light-panel: #e4e8ed;
-  --qb-light-card: #edf0f4;
-  --qb-light-hover: #dce3eb;
-  --qb-light-border: #cbd3dd;
-  background: var(--qb-light-panel);
+  --qb-light-panel: #d8dade;
+  --qb-light-card: #e2e4e7;
+  --qb-light-hover: #cbd0d7;
+  --qb-light-border: #b9c0c9;
+  background-color: var(--qb-light-panel);
   border-color: var(--qb-light-border);
   box-shadow: none;
 }
@@ -31,7 +31,8 @@
   .qb-wizard-nav button:not(.qb-wizard-next),
   .qb-field input,
   .qb-field select,
-  .qb-city-results
+  .qb-city-results,
+  .qb-wizard-results
 ) {
   background-color: var(--qb-light-card);
   border-color: var(--qb-light-border);

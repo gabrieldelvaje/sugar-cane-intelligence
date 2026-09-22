@@ -1,0 +1,22 @@
+name: Validate bilingual interface
+
+on:
+  push:
+    paths:
+      - 'locale-*.js'
+      - 'tests/locale.test.cjs'
+      - '.github/workflows/locale-validation.yml'
+  workflow_dispatch:
+
+jobs:
+  locale-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: |
+          node --check locale-answers.js
+          node --check locale-ui.js
+          node --check locale-followups.js
+      - name: Run bilingual question tests
+        run: node --test tests/locale.test.cjs

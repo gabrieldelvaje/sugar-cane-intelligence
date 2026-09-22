@@ -68,7 +68,7 @@
 .conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button {
   min-height: 44px;
   padding: 10px 14px;
-  border-radius: 14px;
+  border-radius: 9999px;
   background: var(--answer-suggestion-bg);
   border-color: var(--answer-suggestion-border);
   color: var(--answer-suggestion-text);

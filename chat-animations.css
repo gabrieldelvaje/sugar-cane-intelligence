@@ -133,12 +133,12 @@
   cursor: wait;
 }
 
-.submit-morph,
-.submit-morph i {
+.submit-loader,
+.submit-loader i {
   box-sizing: border-box;
 }
 
-.submit-morph {
+.submit-loader {
   position: relative;
   display: inline-block;
   width: 26px;
@@ -146,71 +146,61 @@
   color: currentColor;
 }
 
-.submit-morph i {
+.submit-loader i {
   position: absolute;
-  width: 2.4px;
-  height: 2.4px;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
   border-radius: 50%;
   background: currentColor;
-  left: var(--ax);
-  top: var(--ay);
-  transform: scale(1);
-  transition:
-    left 440ms cubic-bezier(.22,1,.36,1),
-    top 440ms cubic-bezier(.22,1,.36,1),
-    opacity 180ms ease;
+  animation: submit-dot-swarm 1.35s cubic-bezier(.45,.05,.55,.95) infinite;
+  will-change: transform, opacity;
 }
 
-.submit-morph.is-entering i {
-  animation: submit-arrow-break 180ms ease both;
+/* Six different paths: all dots gather near the bottom, fan upward,
+   circulate across the top, then gather at the bottom again. */
+.submit-loader i:nth-child(1) {
+  --bx:-5px; --x1:-10px; --y1:1px;  --x2:-7px; --y2:-8px; --x3:3px;  --y3:-10px;
+}
+.submit-loader i:nth-child(2) {
+  --bx:-3px; --x1:-8px;  --y1:-2px; --x2:-3px; --y2:-10px;--x3:8px;  --y3:-6px;
+}
+.submit-loader i:nth-child(3) {
+  --bx:-1px; --x1:-4px;  --y1:-5px; --x2:3px;  --y2:-10px;--x3:10px; --y3:0px;
+}
+.submit-loader i:nth-child(4) {
+  --bx:1px;  --x1:4px;   --y1:-5px; --x2:8px;  --y2:-6px; --x3:5px;  --y3:7px;
+}
+.submit-loader i:nth-child(5) {
+  --bx:3px;  --x1:8px;   --y1:-2px; --x2:10px; --y2:1px;  --x3:-2px; --y3:9px;
+}
+.submit-loader i:nth-child(6) {
+  --bx:5px;  --x1:10px;  --y1:1px;  --x2:6px;  --y2:7px;  --x3:-8px; --y3:5px;
 }
 
-.submit-morph.is-circle i {
-  left: var(--cx);
-  top: var(--cy);
-  animation: submit-circle-pulse 1.2s linear infinite;
-  animation-delay: var(--delay);
-}
-
-.submit-morph.is-returning i {
-  animation: submit-arrow-return 460ms cubic-bezier(.22,1,.36,1) both;
-}
-
-/* Arrow coordinates -> circle coordinates. */
-.submit-morph i:nth-child(1)  { --ax:11.8px; --ay:20.8px; --cx:21.4px; --cy:11.8px; --delay:0s; }
-.submit-morph i:nth-child(2)  { --ax:11.8px; --ay:17.8px; --cx:20.1px; --cy:7.2px; --delay:-.1s; }
-.submit-morph i:nth-child(3)  { --ax:11.8px; --ay:14.8px; --cx:16.7px; --cy:3.8px; --delay:-.2s; }
-.submit-morph i:nth-child(4)  { --ax:11.8px; --ay:11.8px; --cx:11.8px; --cy:2.5px; --delay:-.3s; }
-.submit-morph i:nth-child(5)  { --ax:11.8px; --ay:8.8px;  --cx:7.2px;  --cy:3.8px; --delay:-.4s; }
-.submit-morph i:nth-child(6)  { --ax:11.8px; --ay:5.8px;  --cx:3.8px;  --cy:7.2px; --delay:-.5s; }
-.submit-morph i:nth-child(7)  { --ax:9.3px;  --ay:8.3px;  --cx:2.5px;  --cy:11.8px; --delay:-.6s; }
-.submit-morph i:nth-child(8)  { --ax:6.8px;  --ay:10.8px; --cx:3.8px;  --cy:16.7px; --delay:-.7s; }
-.submit-morph i:nth-child(9)  { --ax:14.3px; --ay:8.3px;  --cx:7.2px;  --cy:20.1px; --delay:-.8s; }
-.submit-morph i:nth-child(10) { --ax:16.8px; --ay:10.8px; --cx:11.8px; --cy:21.4px; --delay:-.9s; }
-.submit-morph i:nth-child(11) { --ax:9.3px;  --ay:5.8px;  --cx:16.7px; --cy:20.1px; --delay:-1s; }
-.submit-morph i:nth-child(12) { --ax:14.3px; --ay:5.8px;  --cx:20.1px; --cy:16.7px; --delay:-1.1s; }
-
-@keyframes submit-arrow-break {
-  0% { transform: scale(1.35); opacity: .95; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes submit-circle-pulse {
-  0%, 20%, 80%, 100% { transform: scale(1); opacity: .72; }
-  50% { transform: scale(1.65); opacity: 1; }
-}
-
-@keyframes submit-arrow-return {
-  0% { transform: scale(1); opacity: .8; }
-  72% { transform: scale(1.22); opacity: 1; }
-  100% { transform: scale(1.1); opacity: 1; }
+@keyframes submit-dot-swarm {
+  0%, 100% {
+    transform: translate(var(--bx), 7px) scale(.8);
+    opacity: .72;
+  }
+  24% {
+    transform: translate(var(--x1), var(--y1)) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(var(--x2), var(--y2)) scale(1.12);
+    opacity: 1;
+  }
+  76% {
+    transform: translate(var(--x3), var(--y3)) scale(.95);
+    opacity: .88;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .submit-morph i {
-    transition-duration: 220ms;
-  }
-  .submit-morph.is-circle i {
-    animation-duration: 1.8s;
+  .submit-loader i {
+    animation-duration: 2s;
   }
 }

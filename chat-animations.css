@@ -135,7 +135,7 @@
   cursor: wait;
 }
 
-.submit-arrow-orbit {
+.submit-snake-loader {
   display: block;
   width: 26px;
   height: 26px;
@@ -143,13 +143,13 @@
   color: currentColor;
 }
 
-.submit-arrow-runner-svg {
+.submit-snake-group {
   transform-origin: 12px 12px;
   will-change: transform;
 }
 
-.submit-arrow-shaft,
-.submit-arrow-head {
+.submit-snake-shaft,
+.submit-snake-head {
   fill: none;
   stroke: currentColor;
   stroke-width: 2.2;
@@ -159,7 +159,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .submit-arrow-runner-svg {
+  .submit-snake-group {
     will-change: auto;
   }
 }

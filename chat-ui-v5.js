@@ -115,83 +115,52 @@
   function renderSubmitSnake(pointAt, headDistance, scale = 1) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
 
-    const headBack = 3.35;
-    const headWing = 3.35;
-    const tangentProbe = .28;
-    const transitionRange = 3.8;
-
-    const [tipX, tipY] = pointAt(headDistance);
-    const [probeX, probeY] = pointAt(headDistance - tangentProbe);
-
-    let dx = tipX - probeX;
-    let dy = tipY - probeY;
-    const length = Math.hypot(dx, dy) || 1;
-    dx /= length;
-    dy /= length;
-
-    const px = -dy;
-    const py = dx;
-    const tip = [12 + tipX, 12 + tipY];
-
-    let idleMix = 0;
-    if (pointAt === submitOrbitPoint) {
-      const arc = Math.max(0, headDistance - SUBMIT_ARROW_LENGTH);
-      idleMix = 1 - submitEase(submitClamp(arc / transitionRange));
-    } else if (pointAt === submitFinishPoint) {
-      idleMix = submitEase(
-        submitClamp((headDistance - (SUBMIT_ARROW_LENGTH - transitionRange)) / transitionRange)
-      );
-    }
-
-    const bodyTrim = headBack * (1 - idleMix);
-    const bodyEndDistance = headDistance - bodyTrim;
-    const bodyLength = SUBMIT_ARROW_LENGTH - bodyTrim;
-    const tailDistance = bodyEndDistance - bodyLength;
-
+    // Same geometry as the CSS border-triangle loader reference:
+    // the shaft stops at the base of a real triangular arrowhead.
+    // At rest this is exactly: tip (12,5), base from (8.5,8.5) to (15.5,8.5).
+    const headBack = 3.5;
+    const headWing = 3.5;
+    const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
+    const bodyEndDistance = headDistance - headBack;
     const points = [];
+
     for (let i = 0; i < SUBMIT_SAMPLES; i++) {
       const t = i / (SUBMIT_SAMPLES - 1);
-      const distance = tailDistance + bodyLength * t;
+      const distance = tailDistance + (bodyEndDistance - tailDistance) * t;
       const [x, y] = pointAt(distance);
       points.push([12 + x, 12 + y]);
     }
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
 
+    const [tipX, tipY] = pointAt(headDistance);
     const [baseX, baseY] = pointAt(bodyEndDistance);
-    const circularBase = [12 + baseX, 12 + baseY];
 
-    // Circular-arrow arm: slightly behind the tip so it reads like a clean
-    // U+21BA-style arrowhead instead of a rigid right-angle hook.
-    const circularWing = [
-      tip[0] - dx * (headBack * .22) + px * headWing,
-      tip[1] - dy * (headBack * .22) + py * headWing
-    ];
+    let dx = tipX - baseX;
+    let dy = tipY - baseY;
+    const length = Math.hypot(dx, dy) || 1;
+    dx /= length;
+    dy /= length;
 
-    // Exact idle/final V geometry.
-    const idleLeft = [
-      tip[0] - dx * headBack + px * headWing,
-      tip[1] - dy * headBack + py * headWing
-    ];
-    const idleRight = [
-      tip[0] - dx * headBack - px * headWing,
-      tip[1] - dy * headBack - py * headWing
-    ];
+    const px = -dy;
+    const py = dx;
 
-    // Smoothly morph the circular presentation into the original V only at
-    // the beginning/end, so the head never pops into a different shape.
-    const first = [
-      circularBase[0] + (idleLeft[0] - circularBase[0]) * idleMix,
-      circularBase[1] + (idleLeft[1] - circularBase[1]) * idleMix
+    const tip = [12 + tipX, 12 + tipY];
+    const base = [12 + baseX, 12 + baseY];
+    const left = [
+      base[0] + px * headWing,
+      base[1] + py * headWing
     ];
-    const last = [
-      circularWing[0] + (idleRight[0] - circularWing[0]) * idleMix,
-      circularWing[1] + (idleRight[1] - circularWing[1]) * idleMix
+    const right = [
+      base[0] - px * headWing,
+      base[1] - py * headWing
     ];
 
+    // Filled triangle, equivalent to the CSS ::after border triangle.
+    // Because the shaft ends at its base, nothing can overlap behind the tip.
     submitLoaderHead.setAttribute(
       'd',
-      `M ${first[0].toFixed(2)} ${first[1].toFixed(2)} L ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} L ${last[0].toFixed(2)} ${last[1].toFixed(2)}`
+      `M ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} L ${left[0].toFixed(2)} ${left[1].toFixed(2)} L ${right[0].toFixed(2)} ${right[1].toFixed(2)} Z`
     );
 
     if (submitLoaderGroup) {

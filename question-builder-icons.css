@@ -1,0 +1,37 @@
+/* Use the exact uploaded SVG shape as a theme-aware icon, without redrawing it. */
+.question-bar .question-builder-toggle .qb-uploaded-pen-icon {
+  display: block;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  background-color: currentColor;
+  -webkit-mask: url('pen-field.svg?v=2') center / contain no-repeat;
+  mask: url('pen-field.svg?v=2') center / contain no-repeat;
+}
+/* An SVG X avoids font baseline offsets and is exactly centered in the circle. */
+.question-builder-panel .qb-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  line-height: 0;
+  font-size: 0;
+}
+.question-builder-panel .qb-close svg {
+  display: block;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+@media (max-width: 650px) {
+  .question-bar .question-builder-toggle .qb-uploaded-pen-icon {
+    flex-basis: 23px;
+    width: 23px;
+    height: 23px;
+  }
+}

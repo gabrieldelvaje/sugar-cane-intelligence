@@ -36,236 +36,191 @@
   const motionOn = true;
 
   let submitLoaderRaf = 0;
-  let submitLoaderAnimations = [];
-  let submitLoaderOrbitStarted = 0;
-  let submitLoaderLastFrame = 0;
-  let submitLoaderAngles = [];
   let submitLoaderElement = null;
+  let submitLoaderArrow = null;
+  let submitLoaderAngle = Math.PI / 2;
+  let submitLoaderLastFrame = 0;
+  let submitLoaderEntry = null;
 
-  const submitArrowPoints = [
-    [0, 7], [0, 3], [0, -1], [-4, -2], [0, -7], [4, -2]
-  ];
-  const submitCircleAngles = [
-    -Math.PI / 2,
-    -Math.PI / 6,
-    Math.PI / 6,
-    Math.PI / 2,
-    5 * Math.PI / 6,
-    7 * Math.PI / 6
-  ];
-  const submitCircleRadius = 8.2;
+  const SUBMIT_TAU = Math.PI * 2;
+  const SUBMIT_ORBIT_RADIUS = 7.6;
 
-  const translatePoint = ([x, y]) => `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`;
-
-  function circlePoint(angle) {
-    return [
-      Math.cos(angle) * submitCircleRadius,
-      Math.sin(angle) * submitCircleRadius
-    ];
+  function submitOrbitTransform(angle, radius = SUBMIT_ORBIT_RADIUS, scale = .92) {
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    // The glyph points upward at 0deg. Rotate it so it follows the tangent.
+    const rotation = angle * 180 / Math.PI + 180;
+    return `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${rotation.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
   }
 
-  function cancelSubmitLoaderMotion() {
+  function cancelSubmitArrowMotion() {
     cancelAnimationFrame(submitLoaderRaf);
     submitLoaderRaf = 0;
-    submitLoaderAnimations.forEach(animation => {
-      try { animation.cancel(); } catch (_) {}
-    });
-    submitLoaderAnimations = [];
-  }
-
-  function currentDotOffset(dot) {
-    const transform = getComputedStyle(dot).transform;
-    if (!transform || transform === 'none') return [0, 0];
-    try {
-      const matrix = new DOMMatrixReadOnly(transform);
-      return [matrix.m41, matrix.m42];
-    } catch (_) {
-      return [0, 0];
+    if (submitLoaderEntry) {
+      try { submitLoaderEntry.cancel(); } catch (_) {}
+      submitLoaderEntry = null;
     }
   }
 
-  function startSubmitOrbit(loader) {
+  function startSubmitArrowOrbit(loader, arrow) {
     if (!submit.classList.contains('is-loading') || submitLoaderElement !== loader) return;
-    const dots = [...loader.querySelectorAll('i')];
-    submitLoaderOrbitStarted = performance.now();
-    submitLoaderLastFrame = submitLoaderOrbitStarted;
-    submitLoaderAngles = [...submitCircleAngles];
 
-    const baseSpeed = Math.PI * 2 / 1.5;
+    submitLoaderLastFrame = performance.now();
 
     const frame = now => {
       if (!submit.classList.contains('is-loading') || submitLoaderElement !== loader) return;
 
-      const delta = Math.min(.035, Math.max(0, (now - submitLoaderLastFrame) / 1000));
+      const delta = Math.min(.034, Math.max(0, (now - submitLoaderLastFrame) / 1000));
       submitLoaderLastFrame = now;
 
-      dots.forEach((dot, index) => {
-        const angle = submitLoaderAngles[index];
+      // Smoothly accelerate and decelerate during each lap without visible stops.
+      const baseSpeed = SUBMIT_TAU / 1.55;
+      const speedFactor = 1 + .22 * Math.cos(submitLoaderAngle - .35);
+      submitLoaderAngle += baseSpeed * speedFactor * delta;
 
-        // Keep only a subtle slowdown at the bottom and a gentle acceleration
-        // on the way up, so the orbit stays fluid without bunching too much.
-        const speedFactor = Math.max(.76, Math.min(1.24, 1 - .24 * Math.sin(angle)));
-        submitLoaderAngles[index] = angle + baseSpeed * speedFactor * delta;
-
-        const point = circlePoint(submitLoaderAngles[index]);
-        dot.style.transform = translatePoint(point);
-        dot.style.opacity = '1';
-      });
-
+      arrow.style.transform = submitOrbitTransform(submitLoaderAngle);
       submitLoaderRaf = requestAnimationFrame(frame);
     };
 
     submitLoaderRaf = requestAnimationFrame(frame);
   }
 
-  async function formSubmitLoader(loader) {
-    const arrow = loader.querySelector('.submit-loader-arrow');
-    const dots = [...loader.querySelectorAll('i')];
+  async function enterSubmitArrowOrbit(loader, arrow) {
+    submitLoaderAngle = Math.PI / 2;
+    arrow.style.transform = 'translate(0, 0) rotate(0deg) scale(1)';
 
-    const arrowFade = arrow.animate(
-      [{ opacity: 1 }, { opacity: .88, offset: .35 }, { opacity: 0 }],
-      { duration: 430, easing: 'ease-out', fill: 'forwards' }
-    );
-    submitLoaderAnimations.push(arrowFade);
-
-    const dotPromises = dots.map((dot, index) => {
-      const from = translatePoint(submitArrowPoints[index]);
-      const to = translatePoint(circlePoint(submitCircleAngles[index]));
-      dot.style.transform = from;
-      dot.style.opacity = '0';
-
-      const animation = dot.animate([
-        { transform: from, opacity: 0 },
-        { transform: from, opacity: 1, offset: .18 },
-        { transform: to, opacity: 1 }
-      ], {
-        duration: 480,
-        delay: index * 68,
-        easing: 'cubic-bezier(.22,1,.36,1)',
-        fill: 'forwards'
-      });
-      submitLoaderAnimations.push(animation);
-
-      return animation.finished.catch(() => {}).then(() => {
-        if (submitLoaderElement !== loader) return;
-        dot.style.transform = to;
-        dot.style.opacity = '1';
-        try { animation.cancel(); } catch (_) {}
-      });
+    submitLoaderEntry = arrow.animate([
+      { transform: 'translate(0, 0) rotate(0deg) scale(1)' },
+      { transform: submitOrbitTransform(submitLoaderAngle, SUBMIT_ORBIT_RADIUS, .92) }
+    ], {
+      duration: 360,
+      easing: 'cubic-bezier(.22,1,.36,1)',
+      fill: 'forwards'
     });
 
-    await Promise.all(dotPromises);
+    await submitLoaderEntry.finished.catch(() => {});
     if (submitLoaderElement !== loader || !submit.classList.contains('is-loading')) return;
 
-    try { arrowFade.cancel(); } catch (_) {}
-    arrow.style.opacity = '0';
-    submitLoaderAnimations = [];
-    startSubmitOrbit(loader);
+    try { submitLoaderEntry.cancel(); } catch (_) {}
+    submitLoaderEntry = null;
+    arrow.style.transform = submitOrbitTransform(submitLoaderAngle);
+    startSubmitArrowOrbit(loader, arrow);
   }
 
-  async function dissolveSubmitLoader(loader) {
-    if (!loader) return;
-    const arrow = loader.querySelector('.submit-loader-arrow');
-    const dots = [...loader.querySelectorAll('i')];
+  async function finishSubmitArrowOrbit(loader, arrow) {
+    cancelAnimationFrame(submitLoaderRaf);
+    submitLoaderRaf = 0;
 
-    const current = dots.map(currentDotOffset);
-    cancelSubmitLoaderMotion();
+    const startAngle = submitLoaderAngle;
+    let targetAngle = Math.PI / 2;
+    while (targetAngle <= startAngle + .03) targetAngle += SUBMIT_TAU;
 
-    dots.forEach((dot, index) => {
-      dot.style.transform = translatePoint(current[index]);
-      dot.style.opacity = '1';
-    });
-    arrow.style.opacity = '0';
+    const remaining = targetAngle - startAngle;
+    const duration = 250 + 150 * Math.min(1, remaining / SUBMIT_TAU);
 
-    const returning = dots.map((dot, index) => {
-      const from = translatePoint(current[index]);
-      const to = translatePoint(submitArrowPoints[index]);
-      const animation = dot.animate([
-        { transform: from, opacity: 1 },
-        { transform: to, opacity: 1 }
-      ], {
-        duration: 440,
-        delay: index * 62,
-        easing: 'cubic-bezier(.22,1,.36,1)',
-        fill: 'forwards'
-      });
-      submitLoaderAnimations.push(animation);
+    await new Promise(resolve => {
+      const started = performance.now();
 
-      return animation.finished.catch(() => {}).then(() => {
-        dot.style.transform = to;
-        dot.style.opacity = '1';
-        try { animation.cancel(); } catch (_) {}
-      });
-    });
+      const frame = now => {
+        if (submitLoaderElement !== loader) {
+          resolve();
+          return;
+        }
 
-    await Promise.all(returning);
+        const raw = Math.min(1, (now - started) / duration);
+        // A fast final sweep that still lands softly at the bottom.
+        const eased = raw < .72
+          ? 1.18 * raw
+          : .8496 + .1504 * (1 - Math.pow(1 - (raw - .72) / .28, 3));
+        const progress = Math.min(1, eased);
+        const angle = startAngle + remaining * progress;
+        const scale = .92 + .16 * Math.sin(Math.PI * progress);
 
-    if (submitLoaderElement !== loader || submit.classList.contains('is-loading')) return;
+        submitLoaderAngle = angle;
+        arrow.style.transform = submitOrbitTransform(angle, SUBMIT_ORBIT_RADIUS, scale);
 
-    const arrowFade = arrow.animate(
-      [{ opacity: 0 }, { opacity: 1 }],
-      { duration: 180, easing: 'ease-out', fill: 'forwards' }
-    );
-    const dotFade = dots.map((dot, index) => {
-      const animation = dot.animate(
-        [{ opacity: 1 }, { opacity: 0 }],
-        { duration: 160, delay: index * 18, easing: 'ease-out', fill: 'forwards' }
-      );
-      return animation.finished.catch(() => {});
+        if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
+        else resolve();
+      };
+
+      submitLoaderRaf = requestAnimationFrame(frame);
     });
 
-    await Promise.all([arrowFade.finished.catch(() => {}), ...dotFade]);
+    if (submitLoaderElement !== loader) return;
+
+    submitLoaderAngle = targetAngle;
+    arrow.style.transform = submitOrbitTransform(targetAngle, SUBMIT_ORBIT_RADIUS, .92);
+
+    // From the bottom of the completed lap, the arrow rises back into its
+    // original centered position and restores its normal size/orientation.
+    const rise = arrow.animate([
+      { transform: submitOrbitTransform(targetAngle, SUBMIT_ORBIT_RADIUS, .92) },
+      { transform: 'translate(0, -1.5px) rotate(0deg) scale(1.08)', offset: .72 },
+      { transform: 'translate(0, 0) rotate(0deg) scale(1)' }
+    ], {
+      duration: 320,
+      easing: 'cubic-bezier(.22,1,.36,1)',
+      fill: 'forwards'
+    });
+
+    await rise.finished.catch(() => {});
+    try { rise.cancel(); } catch (_) {}
+    arrow.style.transform = 'translate(0, 0) rotate(0deg) scale(1)';
   }
 
   async function setSubmitLoading(loading, instant = false) {
     submit.setAttribute('aria-label', loading ? 'Gerando resposta' : 'Enviar pergunta');
 
     if (loading) {
-      cancelSubmitLoaderMotion();
+      cancelSubmitArrowMotion();
+      submit.classList.remove('is-returning');
       submit.classList.add('is-loading');
 
       const loader = document.createElement('span');
-      loader.className = 'submit-loader-orbit';
+      loader.className = 'submit-arrow-loader';
       loader.setAttribute('aria-hidden', 'true');
 
       const arrow = document.createElement('span');
-      arrow.className = 'submit-loader-arrow';
+      arrow.className = 'submit-arrow-runner';
       arrow.textContent = '↑';
       loader.append(arrow);
 
-      submitArrowPoints.forEach(point => {
-        const dot = document.createElement('i');
-        dot.style.transform = translatePoint(point);
-        dot.style.opacity = '0';
-        loader.append(dot);
-      });
-
       submit.replaceChildren(loader);
       submitLoaderElement = loader;
+      submitLoaderArrow = arrow;
 
       requestAnimationFrame(() => {
-        if (submitLoaderElement === loader) formSubmitLoader(loader);
+        if (submitLoaderElement === loader) enterSubmitArrowOrbit(loader, arrow);
       });
       return;
     }
 
     submit.classList.remove('is-loading');
     submit.classList.add('is-returning');
-    const loader = submitLoaderElement || submit.querySelector('.submit-loader-orbit');
 
-    if (!loader || instant) {
-      cancelSubmitLoaderMotion();
+    const loader = submitLoaderElement;
+    const arrow = submitLoaderArrow;
+
+    if (!loader || !arrow || instant) {
+      cancelSubmitArrowMotion();
       submitLoaderElement = null;
+      submitLoaderArrow = null;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
       return;
     }
 
-    await dissolveSubmitLoader(loader);
+    if (submitLoaderEntry) {
+      try { await submitLoaderEntry.finished; } catch (_) {}
+      submitLoaderEntry = null;
+    }
+
+    await finishSubmitArrowOrbit(loader, arrow);
 
     if (submitLoaderElement === loader && !submit.classList.contains('is-loading')) {
-      cancelSubmitLoaderMotion();
+      cancelSubmitArrowMotion();
       submitLoaderElement = null;
+      submitLoaderArrow = null;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
     }

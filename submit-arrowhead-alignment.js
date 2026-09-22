@@ -15,11 +15,11 @@
 
     const shaft = document.createElementNS(SVG_NS, 'path');
     shaft.setAttribute('class', 'submit-snake-shaft');
-    shaft.setAttribute('d', 'M12 19 L12 5');
+    shaft.setAttribute('d', 'M12 19 L12 8.5');
 
     const head = document.createElementNS(SVG_NS, 'path');
     head.setAttribute('class', 'submit-snake-head');
-    head.setAttribute('d', 'M8.5 8.5 L12 5 L15.5 8.5');
+    head.setAttribute('d', 'M12 5 L15.5 8.5 L8.5 8.5 Z');
 
     svg.append(shaft, head);
     return svg;
@@ -31,7 +31,7 @@
     submit.replaceChildren(makeIdleArrow());
   }
 
-  // The loader controller owns the animated V angle. This helper now only
+  // The loader controller owns the animated triangular head. This helper now only
   // restores the exact same SVG once loading is finished.
   new MutationObserver(syncIdleArrow).observe(submit, { childList: true });
   syncIdleArrow();

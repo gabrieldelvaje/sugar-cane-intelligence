@@ -35,45 +35,223 @@
   // Animation is always on. Keep only the light/dark theme control in the header.
   const motionOn = true;
 
-  let submitLoaderTimer = 0;
+  let submitLoaderRaf = 0;
+  let submitLoaderAnimations = [];
+  let submitLoaderOrbitStarted = 0;
+  let submitLoaderElement = null;
 
-  function setSubmitLoading(loading) {
-    clearTimeout(submitLoaderTimer);
+  const submitArrowPoints = [
+    [0, 7], [0, 3], [0, -1], [-4, -2], [0, -7], [4, -2]
+  ];
+  const submitCircleAngles = [
+    -Math.PI / 2,
+    -Math.PI / 6,
+    Math.PI / 6,
+    Math.PI / 2,
+    5 * Math.PI / 6,
+    7 * Math.PI / 6
+  ];
+  const submitCircleRadius = 8.2;
+
+  const translatePoint = ([x, y]) => `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`;
+
+  function circlePoint(angle) {
+    return [
+      Math.cos(angle) * submitCircleRadius,
+      Math.sin(angle) * submitCircleRadius
+    ];
+  }
+
+  function cancelSubmitLoaderMotion() {
+    cancelAnimationFrame(submitLoaderRaf);
+    submitLoaderRaf = 0;
+    submitLoaderAnimations.forEach(animation => {
+      try { animation.cancel(); } catch (_) {}
+    });
+    submitLoaderAnimations = [];
+  }
+
+  function currentDotOffset(dot) {
+    const transform = getComputedStyle(dot).transform;
+    if (!transform || transform === 'none') return [0, 0];
+    try {
+      const matrix = new DOMMatrixReadOnly(transform);
+      return [matrix.m41, matrix.m42];
+    } catch (_) {
+      return [0, 0];
+    }
+  }
+
+  function startSubmitOrbit(loader) {
+    if (!submit.classList.contains('is-loading') || submitLoaderElement !== loader) return;
+    const dots = [...loader.querySelectorAll('i')];
+    submitLoaderOrbitStarted = performance.now();
+
+    const frame = now => {
+      if (!submit.classList.contains('is-loading') || submitLoaderElement !== loader) return;
+      const elapsed = (now - submitLoaderOrbitStarted) / 1000;
+      const rotation = elapsed * (Math.PI * 2 / 1.45);
+
+      dots.forEach((dot, index) => {
+        const point = circlePoint(submitCircleAngles[index] + rotation);
+        dot.style.transform = translatePoint(point);
+        dot.style.opacity = '1';
+      });
+
+      submitLoaderRaf = requestAnimationFrame(frame);
+    };
+
+    submitLoaderRaf = requestAnimationFrame(frame);
+  }
+
+  async function formSubmitLoader(loader) {
+    const arrow = loader.querySelector('.submit-loader-arrow');
+    const dots = [...loader.querySelectorAll('i')];
+
+    const arrowFade = arrow.animate(
+      [{ opacity: 1 }, { opacity: .88, offset: .35 }, { opacity: 0 }],
+      { duration: 430, easing: 'ease-out', fill: 'forwards' }
+    );
+    submitLoaderAnimations.push(arrowFade);
+
+    const dotPromises = dots.map((dot, index) => {
+      const from = translatePoint(submitArrowPoints[index]);
+      const to = translatePoint(circlePoint(submitCircleAngles[index]));
+      dot.style.transform = from;
+      dot.style.opacity = '0';
+
+      const animation = dot.animate([
+        { transform: from, opacity: 0 },
+        { transform: from, opacity: 1, offset: .18 },
+        { transform: to, opacity: 1 }
+      ], {
+        duration: 480,
+        delay: index * 68,
+        easing: 'cubic-bezier(.22,1,.36,1)',
+        fill: 'forwards'
+      });
+      submitLoaderAnimations.push(animation);
+
+      return animation.finished.catch(() => {}).then(() => {
+        if (submitLoaderElement !== loader) return;
+        dot.style.transform = to;
+        dot.style.opacity = '1';
+        try { animation.cancel(); } catch (_) {}
+      });
+    });
+
+    await Promise.all(dotPromises);
+    if (submitLoaderElement !== loader || !submit.classList.contains('is-loading')) return;
+
+    try { arrowFade.cancel(); } catch (_) {}
+    arrow.style.opacity = '0';
+    submitLoaderAnimations = [];
+    startSubmitOrbit(loader);
+  }
+
+  async function dissolveSubmitLoader(loader) {
+    if (!loader) return;
+    const arrow = loader.querySelector('.submit-loader-arrow');
+    const dots = [...loader.querySelectorAll('i')];
+
+    const current = dots.map(currentDotOffset);
+    cancelSubmitLoaderMotion();
+
+    dots.forEach((dot, index) => {
+      dot.style.transform = translatePoint(current[index]);
+      dot.style.opacity = '1';
+    });
+    arrow.style.opacity = '0';
+
+    const returning = dots.map((dot, index) => {
+      const from = translatePoint(current[index]);
+      const to = translatePoint(submitArrowPoints[index]);
+      const animation = dot.animate([
+        { transform: from, opacity: 1 },
+        { transform: to, opacity: 1 }
+      ], {
+        duration: 440,
+        delay: index * 62,
+        easing: 'cubic-bezier(.22,1,.36,1)',
+        fill: 'forwards'
+      });
+      submitLoaderAnimations.push(animation);
+
+      return animation.finished.catch(() => {}).then(() => {
+        dot.style.transform = to;
+        dot.style.opacity = '1';
+        try { animation.cancel(); } catch (_) {}
+      });
+    });
+
+    await Promise.all(returning);
+
+    if (submitLoaderElement !== loader || submit.classList.contains('is-loading')) return;
+
+    const arrowFade = arrow.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 180, easing: 'ease-out', fill: 'forwards' }
+    );
+    const dotFade = dots.map((dot, index) => {
+      const animation = dot.animate(
+        [{ opacity: 1 }, { opacity: 0 }],
+        { duration: 160, delay: index * 18, easing: 'ease-out', fill: 'forwards' }
+      );
+      return animation.finished.catch(() => {});
+    });
+
+    await Promise.all([arrowFade.finished.catch(() => {}), ...dotFade]);
+  }
+
+  async function setSubmitLoading(loading, instant = false) {
     submit.setAttribute('aria-label', loading ? 'Gerando resposta' : 'Enviar pergunta');
 
     if (loading) {
+      cancelSubmitLoaderMotion();
       submit.classList.add('is-loading');
 
       const loader = document.createElement('span');
-      loader.className = 'submit-loader-morph';
+      loader.className = 'submit-loader-orbit';
       loader.setAttribute('aria-hidden', 'true');
-      for (let i = 0; i < 6; i++) loader.append(document.createElement('i'));
+
+      const arrow = document.createElement('span');
+      arrow.className = 'submit-loader-arrow';
+      arrow.textContent = '↑';
+      loader.append(arrow);
+
+      submitArrowPoints.forEach(point => {
+        const dot = document.createElement('i');
+        dot.style.transform = translatePoint(point);
+        dot.style.opacity = '0';
+        loader.append(dot);
+      });
+
       submit.replaceChildren(loader);
+      submitLoaderElement = loader;
 
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (!submit.contains(loader)) return;
-          loader.classList.add('is-formed');
-        });
+        if (submitLoaderElement === loader) formSubmitLoader(loader);
       });
       return;
     }
 
     submit.classList.remove('is-loading');
-    const loader = submit.querySelector('.submit-loader-morph');
-    if (!loader) {
+    const loader = submitLoaderElement || submit.querySelector('.submit-loader-orbit');
+
+    if (!loader || instant) {
+      cancelSubmitLoaderMotion();
+      submitLoaderElement = null;
       submit.textContent = '↑';
       return;
     }
 
-    loader.classList.remove('is-formed');
-    loader.classList.add('is-returning');
+    await dissolveSubmitLoader(loader);
 
-    submitLoaderTimer = window.setTimeout(() => {
-      if (submit.contains(loader) && !submit.classList.contains('is-loading')) {
-        submit.textContent = '↑';
-      }
-    }, 560);
+    if (submitLoaderElement === loader && !submit.classList.contains('is-loading')) {
+      cancelSubmitLoaderMotion();
+      submitLoaderElement = null;
+      submit.textContent = '↑';
+    }
   }
 
   function bottom() {
@@ -257,10 +435,11 @@
       ], { duration: 320 });
     }
     if (!active()) return;
+    await setSubmitLoading(false);
+    if (!active()) return;
     busy = false;
     input.disabled = false;
     submit.disabled = false;
-    setSubmitLoading(false);
     bottom();
     input.focus({ preventScroll: true });
   }
@@ -287,7 +466,7 @@
     busy = false;
     input.disabled = false;
     submit.disabled = false;
-    setSubmitLoading(false);
+    setSubmitLoading(false, true);
     page.classList.remove('chat-started');
     // The original handler clears the conversation and restores initial buttons.
   }, true);

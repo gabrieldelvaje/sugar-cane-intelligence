@@ -59,6 +59,22 @@
     return 1 - Math.pow(1 - t, 3);
   };
 
+  // Rounded joins between the Y axis and the circular orbit.
+  // The tip keeps its original top/bottom points, but leaves/enters them
+  // through a cubic fillet instead of a hard 90-degree corner.
+  const SUBMIT_JOIN_LENGTH = 3.2;
+  const SUBMIT_JOIN_HANDLE = 1.6;
+
+  function submitCubicPoint(p0, p1, p2, p3, t) {
+    const u = 1 - t;
+    const uu = u * u;
+    const tt = t * t;
+    return [
+      uu * u * p0[0] + 3 * uu * t * p1[0] + 3 * u * tt * p2[0] + tt * t * p3[0],
+      uu * u * p0[1] + 3 * uu * t * p1[1] + 3 * u * tt * p2[1] + tt * t * p3[1]
+    ];
+  }
+
   function cancelSubmitLoaderMotion() {
     cancelAnimationFrame(submitLoaderRaf);
     submitLoaderRaf = 0;
@@ -70,6 +86,26 @@
     }
 
     const arc = distance - SUBMIT_ARROW_LENGTH;
+
+    // Leave y = +1 continuously: keep the exact top point, continue upward
+    // for a moment, then bend into the circle with matching circle tangent.
+    if (arc < SUBMIT_JOIN_LENGTH) {
+      const t = submitClamp(arc / SUBMIT_JOIN_LENGTH);
+      const endAngle = -Math.PI / 2 + SUBMIT_JOIN_LENGTH / SUBMIT_RADIUS;
+      const p0 = [0, -SUBMIT_RADIUS];
+      const p3 = [
+        Math.cos(endAngle) * SUBMIT_RADIUS,
+        Math.sin(endAngle) * SUBMIT_RADIUS
+      ];
+      const tangent = [-Math.sin(endAngle), Math.cos(endAngle)];
+      const p1 = [0, -SUBMIT_RADIUS - SUBMIT_JOIN_HANDLE];
+      const p2 = [
+        p3[0] - tangent[0] * SUBMIT_JOIN_HANDLE,
+        p3[1] - tangent[1] * SUBMIT_JOIN_HANDLE
+      ];
+      return submitCubicPoint(p0, p1, p2, p3, t);
+    }
+
     const angle = -Math.PI / 2 + arc / SUBMIT_RADIUS;
     return [
       Math.cos(angle) * SUBMIT_RADIUS,
@@ -84,6 +120,17 @@
         Math.cos(angle) * SUBMIT_RADIUS,
         Math.sin(angle) * SUBMIT_RADIUS
       ];
+    }
+
+    // Return from y = -1 through the same kind of rounded fillet. The orbit
+    // arrives horizontally and the curve turns it smoothly upward into Y.
+    if (distance < SUBMIT_JOIN_LENGTH) {
+      const t = submitClamp(distance / SUBMIT_JOIN_LENGTH);
+      const p0 = [0, SUBMIT_RADIUS];
+      const p1 = [-SUBMIT_JOIN_HANDLE, SUBMIT_RADIUS];
+      const p3 = [0, SUBMIT_RADIUS - SUBMIT_JOIN_LENGTH];
+      const p2 = [0, p3[1] + SUBMIT_JOIN_HANDLE];
+      return submitCubicPoint(p0, p1, p2, p3, t);
     }
 
     return [0, SUBMIT_RADIUS - Math.min(distance, SUBMIT_ARROW_LENGTH)];

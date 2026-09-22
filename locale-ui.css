@@ -71,7 +71,9 @@
   outline-offset: 2px;
 }
 @media (max-width: 650px) {
-  .topbar { gap: 9px; }
-  .topbar .sci-language-toggle { width: 48px; height: 34px; }
+  .topbar { gap: 8px; }
+  .topbar .brand-copy strong { font-size: 14px; }
+  .topbar .brand-copy span { font-size: 11px; }
+  .topbar .sci-language-toggle { width: 46px; height: 34px; }
   .topbar #theme-toggle { flex-basis: 32px; width: 32px; height: 32px; }
 }

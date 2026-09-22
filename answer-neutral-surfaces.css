@@ -1,0 +1,76 @@
+/* Restrict the neutral palette to generated bot results. Keep the agricultural
+   green on the composer, question bubble, opening suggestions and navigation. */
+:root {
+  --answer-card-bg: #f5f6f7;
+  --answer-table-bg: #ffffff;
+  --answer-table-head-bg: #f1f3f4;
+  --answer-border: #dce0e3;
+  --answer-separator: #e4e7e9;
+  --answer-muted: #68717a;
+  --answer-suggestion-bg: #f7f8f9;
+  --answer-suggestion-border: #e5e8eb;
+  --answer-suggestion-text: #727b84;
+  --answer-suggestion-hover-bg: #eef1f2;
+  --answer-suggestion-hover-border: #bfc8cb;
+}
+[data-theme="dark"] {
+  --answer-card-bg: #25292b;
+  --answer-table-bg: #1b2021;
+  --answer-table-head-bg: #292f31;
+  --answer-border: #42494c;
+  --answer-separator: #363e40;
+  --answer-muted: #a9b1b5;
+  --answer-suggestion-bg: #202527;
+  --answer-suggestion-border: #343c3f;
+  --answer-suggestion-text: #adb5b9;
+  --answer-suggestion-hover-bg: #2a3032;
+  --answer-suggestion-hover-border: #68777c;
+}
+
+.conversation .message.assistant .kpi {
+  background: var(--answer-card-bg);
+  border-color: var(--answer-border);
+  box-shadow: none;
+}
+.conversation .message.assistant .kpi span { color: var(--answer-muted); }
+.conversation .message.assistant .table-wrap {
+  background: var(--answer-table-bg);
+  border-color: var(--answer-border);
+  box-shadow: none;
+}
+.conversation .message.assistant .data-table {
+  background: var(--answer-table-bg);
+  color: var(--text);
+}
+.conversation .message.assistant .data-table th {
+  background: var(--answer-table-head-bg);
+  color: var(--answer-muted);
+  border-bottom-color: var(--answer-border);
+}
+.conversation .message.assistant .data-table td {
+  background: var(--answer-table-bg);
+  border-bottom-color: var(--answer-separator);
+}
+/* Apply only to the two optional follow-up questions, not the actionable
+   correction offered after an invalid comparison. */
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) .follow-up-label {
+  color: var(--answer-muted);
+  font-weight: 500;
+}
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button {
+  background: var(--answer-suggestion-bg);
+  border-color: var(--answer-suggestion-border);
+  color: var(--answer-suggestion-text);
+  box-shadow: none;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:hover,
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:focus-visible {
+  background: var(--answer-suggestion-hover-bg);
+  border-color: var(--answer-suggestion-hover-border);
+  color: var(--text);
+}
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}

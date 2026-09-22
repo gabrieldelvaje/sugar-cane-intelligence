@@ -47,7 +47,7 @@
   const SUBMIT_RADIUS = 7;
   const SUBMIT_ARROW_LENGTH = SUBMIT_RADIUS * 2;
   const SUBMIT_CIRCUMFERENCE = SUBMIT_TAU * SUBMIT_RADIUS;
-  const SUBMIT_SAMPLES = 24;
+  const SUBMIT_SAMPLES = 32;
 
   const submitClamp = value => Math.max(0, Math.min(1, value));
   const submitEase = value => {
@@ -127,16 +127,19 @@
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
 
+    // Get the tip direction from a short section of its actual path rather
+    // than the last sampling step, which made the small head wobble/deform.
     const tip = points[points.length - 1];
-    const previous = points[points.length - 2];
-    let dx = tip[0] - previous[0];
-    let dy = tip[1] - previous[1];
+    const [behindX, behindY] = pointAt(headDistance - 1.3);
+    let dx = tip[0] - (12 + behindX);
+    let dy = tip[1] - (12 + behindY);
     const length = Math.hypot(dx, dy) || 1;
     dx /= length;
     dy /= length;
 
-    const back = 3.2;
-    const wing = 2.15;
+    // A larger, clearly defined chevron remains recognisable at every angle.
+    const back = 4.4;
+    const wing = 3.05;
     const px = -dy;
     const py = dx;
 

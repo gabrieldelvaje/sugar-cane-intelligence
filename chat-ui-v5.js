@@ -277,8 +277,11 @@
       const speedFactor = 1 + .28 * gravityPhase;
       submitLoaderDistance += baseSpeed * speedFactor * delta;
 
+      // Keep the arrow visibly longer throughout the orbit.
+      // It still stretches on the descent, but stays fairly long on the climb.
+      const orbitLengthBase = SUBMIT_ARROW_LENGTH + 2.2;
       submitLoaderVisibleLength =
-        SUBMIT_ARROW_LENGTH + 1.4 * gravityPhase;
+        orbitLengthBase + 1.1 * gravityPhase;
 
       renderSubmitSnake(
         submitOrbitPoint,

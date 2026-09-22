@@ -133,74 +133,79 @@
   cursor: wait;
 }
 
-.submit-loader,
-.submit-loader i {
+.submit-loader-morph,
+.submit-loader-morph i {
   box-sizing: border-box;
 }
 
-.submit-loader {
+.submit-loader-morph {
   position: relative;
   display: inline-block;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   color: currentColor;
 }
 
-.submit-loader i {
+.submit-loader-morph i {
   position: absolute;
-  left: 50%;
-  top: 50%;
   width: 3px;
   height: 3px;
   margin: -1.5px 0 0 -1.5px;
   border-radius: 50%;
   background: currentColor;
-  animation: submit-dot-swarm 1.35s cubic-bezier(.45,.05,.55,.95) infinite;
-  will-change: transform, opacity;
+  left: var(--ax);
+  top: var(--ay);
+  opacity: .96;
+  transform: scale(1);
+  transition:
+    left 520ms cubic-bezier(.22,1,.36,1),
+    top 520ms cubic-bezier(.22,1,.36,1),
+    opacity 220ms ease,
+    transform 220ms ease;
+  will-change: left, top, transform, opacity;
 }
 
-/* Six different paths: all dots gather near the bottom, fan upward,
-   circulate across the top, then gather at the bottom again. */
-.submit-loader i:nth-child(1) {
-  --bx:-5px; --x1:-10px; --y1:1px;  --x2:-7px; --y2:-8px; --x3:3px;  --y3:-10px;
-}
-.submit-loader i:nth-child(2) {
-  --bx:-3px; --x1:-8px;  --y1:-2px; --x2:-3px; --y2:-10px;--x3:8px;  --y3:-6px;
-}
-.submit-loader i:nth-child(3) {
-  --bx:-1px; --x1:-4px;  --y1:-5px; --x2:3px;  --y2:-10px;--x3:10px; --y3:0px;
-}
-.submit-loader i:nth-child(4) {
-  --bx:1px;  --x1:4px;   --y1:-5px; --x2:8px;  --y2:-6px; --x3:5px;  --y3:7px;
-}
-.submit-loader i:nth-child(5) {
-  --bx:3px;  --x1:8px;   --y1:-2px; --x2:10px; --y2:1px;  --x3:-2px; --y3:9px;
-}
-.submit-loader i:nth-child(6) {
-  --bx:5px;  --x1:10px;  --y1:1px;  --x2:6px;  --y2:7px;  --x3:-8px; --y3:5px;
+/* Six dots first draw a minimal upward arrow. */
+.submit-loader-morph i:nth-child(1) { --ax:12px; --ay:19px; --lx:12px; --ly:20px; --delay:0s; }
+.submit-loader-morph i:nth-child(2) { --ax:12px; --ay:15px; --lx:5px;  --ly:16px; --delay:-.18s; }
+.submit-loader-morph i:nth-child(3) { --ax:12px; --ay:11px; --lx:5px;  --ly:8px;  --delay:-.36s; }
+.submit-loader-morph i:nth-child(4) { --ax:8px;  --ay:10px; --lx:12px; --ly:4px;  --delay:-.54s; }
+.submit-loader-morph i:nth-child(5) { --ax:12px; --ay:6px;  --lx:19px; --ly:8px;  --delay:-.72s; }
+.submit-loader-morph i:nth-child(6) { --ax:16px; --ay:10px; --lx:19px; --ly:16px; --delay:-.90s; }
+
+/* They rise and spread into a six-point loader. */
+.submit-loader-morph.is-formed i {
+  left: var(--lx);
+  top: var(--ly);
+  animation: submit-loader-breathe 1.15s ease-in-out infinite;
+  animation-delay: var(--delay);
 }
 
-@keyframes submit-dot-swarm {
+.submit-loader-morph.is-returning i {
+  animation: none;
+  transform: scale(.95);
+}
+
+@keyframes submit-loader-breathe {
   0%, 100% {
-    transform: translate(var(--bx), 7px) scale(.8);
-    opacity: .72;
+    transform: scale(.72);
+    opacity: .52;
   }
-  24% {
-    transform: translate(var(--x1), var(--y1)) scale(1);
+  42% {
+    transform: scale(1.35);
     opacity: 1;
   }
-  50% {
-    transform: translate(var(--x2), var(--y2)) scale(1.12);
-    opacity: 1;
-  }
-  76% {
-    transform: translate(var(--x3), var(--y3)) scale(.95);
-    opacity: .88;
+  68% {
+    transform: scale(.95);
+    opacity: .78;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .submit-loader i {
-    animation-duration: 2s;
+  .submit-loader-morph i {
+    transition-duration: 260ms;
+  }
+  .submit-loader-morph.is-formed i {
+    animation-duration: 1.7s;
   }
 }

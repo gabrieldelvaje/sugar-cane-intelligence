@@ -126,3 +126,53 @@
     padding-bottom: calc(168px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+.question-bar button[type="submit"].is-loading,
+.question-bar button[type="submit"].is-loading:disabled {
+  opacity: 1;
+  cursor: wait;
+}
+
+.lds-default,
+.lds-default i {
+  box-sizing: border-box;
+}
+
+.lds-default {
+  display: inline-block;
+  position: relative;
+  width: 26px;
+  height: 26px;
+  color: currentColor;
+}
+
+.lds-default i {
+  position: absolute;
+  width: 2.1px;
+  height: 2.1px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: lds-default 1.2s linear infinite;
+}
+
+.lds-default i:nth-child(1) { animation-delay: 0s; top: 11.96px; left: 21.53px; }
+.lds-default i:nth-child(2) { animation-delay: -.1s; top: 7.18px; left: 20.25px; }
+.lds-default i:nth-child(3) { animation-delay: -.2s; top: 3.67px; left: 16.74px; }
+.lds-default i:nth-child(4) { animation-delay: -.3s; top: 2.39px; left: 11.96px; }
+.lds-default i:nth-child(5) { animation-delay: -.4s; top: 3.67px; left: 7.18px; }
+.lds-default i:nth-child(6) { animation-delay: -.5s; top: 7.18px; left: 3.67px; }
+.lds-default i:nth-child(7) { animation-delay: -.6s; top: 11.96px; left: 2.39px; }
+.lds-default i:nth-child(8) { animation-delay: -.7s; top: 16.74px; left: 3.67px; }
+.lds-default i:nth-child(9) { animation-delay: -.8s; top: 20.25px; left: 7.18px; }
+.lds-default i:nth-child(10) { animation-delay: -.9s; top: 21.53px; left: 11.96px; }
+.lds-default i:nth-child(11) { animation-delay: -1s; top: 20.25px; left: 16.74px; }
+.lds-default i:nth-child(12) { animation-delay: -1.1s; top: 16.74px; left: 20.25px; }
+
+@keyframes lds-default {
+  0%, 20%, 80%, 100% { transform: scale(1); }
+  50% { transform: scale(1.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lds-default i { animation-duration: 1.8s; }
+}

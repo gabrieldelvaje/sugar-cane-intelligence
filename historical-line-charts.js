@@ -127,9 +127,15 @@
       const path = item.points.map((point, pointIndex) =>
         (pointIndex ? 'L ' : 'M ') + x(point.year).toFixed(2) + ' ' + y(point.value).toFixed(2)
       ).join(' ');
+      const seriesLabel = item.uf ? item.name + ' (' + item.uf + ')' : item.name;
       const dots = item.points.map(point =>
-        '<circle cx="' + x(point.year).toFixed(2) + '" cy="' + y(point.value).toFixed(2) +
-        '" r="3.25" style="fill:' + color + '"></circle>'
+        '<circle class="historical-point" cx="' + x(point.year).toFixed(2) + '" cy="' +
+        y(point.value).toFixed(2) + '" r="4.25" tabindex="0" role="button" ' +
+        'aria-label="' + esc(seriesLabel + ', ' + point.year + ': ' +
+        fmt(point.value, decimals(metricName)) + ' ' + info[metricName].unit) + '" ' +
+        'data-series="' + esc(seriesLabel) + '" data-year="' + point.year +
+        '" data-value="' + esc(fmt(point.value, decimals(metricName)) + ' ' +
+        info[metricName].unit) + '" style="fill:' + color + '"></circle>'
       ).join('');
       return '<path d="' + path + '" fill="none" style="stroke:' + color +
         '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>' + dots;
@@ -148,6 +154,90 @@
       esc(label.toLowerCase()) + '">' + grid + lines + yLabels + xLabels + '</svg>' +
       '<div class="legend"><strong>' + esc(label) + ' por ano</strong> — ' + legend + '</div>' +
       '</div>';
+  }
+
+
+  function installTooltip() {
+    if (document.querySelector('.historical-chart-tooltip')) return;
+    const tooltip = document.createElement('div');
+    tooltip.className = 'historical-chart-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.hidden = true;
+    document.body.append(tooltip);
+
+    let hideTimer;
+
+    function fill(point) {
+      tooltip.replaceChildren();
+      const name = document.createElement('strong');
+      name.textContent = point.dataset.series || '';
+      const detail = document.createElement('span');
+      detail.textContent = (point.dataset.year || '') + ' · ' + (point.dataset.value || '');
+      tooltip.append(name, detail);
+    }
+
+    function place(clientX, clientY) {
+      tooltip.hidden = false;
+      const margin = 12;
+      const box = tooltip.getBoundingClientRect();
+      let left = clientX + 14;
+      let top = clientY - box.height - 14;
+      if (left + box.width > innerWidth - margin) left = clientX - box.width - 14;
+      if (left < margin) left = margin;
+      if (top < margin) top = clientY + 14;
+      if (top + box.height > innerHeight - margin) top = innerHeight - box.height - margin;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    }
+
+    function show(point, clientX, clientY) {
+      clearTimeout(hideTimer);
+      fill(point);
+      place(clientX, clientY);
+      point.classList.add('is-tooltip-active');
+    }
+
+    function hide(point) {
+      point?.classList.remove('is-tooltip-active');
+      tooltip.hidden = true;
+    }
+
+    document.addEventListener('pointerover', event => {
+      const point = event.target.closest?.('.historical-point');
+      if (!point) return;
+      show(point, event.clientX, event.clientY);
+    });
+
+    document.addEventListener('pointermove', event => {
+      const point = event.target.closest?.('.historical-point');
+      if (!point || tooltip.hidden) return;
+      place(event.clientX, event.clientY);
+    });
+
+    document.addEventListener('pointerout', event => {
+      const point = event.target.closest?.('.historical-point');
+      if (!point) return;
+      hide(point);
+    });
+
+    document.addEventListener('focusin', event => {
+      const point = event.target.closest?.('.historical-point');
+      if (!point) return;
+      const box = point.getBoundingClientRect();
+      show(point, box.left + box.width / 2, box.top);
+    });
+
+    document.addEventListener('focusout', event => {
+      const point = event.target.closest?.('.historical-point');
+      if (point) hide(point);
+    });
+
+    document.addEventListener('pointerdown', event => {
+      const point = event.target.closest?.('.historical-point');
+      if (!point || event.pointerType === 'mouse') return;
+      show(point, event.clientX, event.clientY);
+      hideTimer = setTimeout(() => hide(point), 2200);
+    });
   }
 
   city = function cityWithHistoricalChart(question, metricName, municipality) {
@@ -171,4 +261,6 @@
     const chart = lineChart(series, metricName);
     return chart ? html + chart : html;
   };
+
+  installTooltip();
 })();

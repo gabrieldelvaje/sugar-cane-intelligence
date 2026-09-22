@@ -1,0 +1,39 @@
+name: Validate builder slide in browser
+
+on:
+  push:
+    paths:
+      - 'question-builder-slide.css'
+      - 'question-builder-slide.js'
+      - 'question-builder.css'
+      - 'question-builder.js'
+      - 'question-wizard.css'
+      - 'index.html'
+      - 'tests/builder-slide.browser.cjs'
+      - '.github/workflows/builder-slide-browser.yml'
+  workflow_dispatch:
+
+jobs:
+  browser-builder-slide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runner
+        run: npm install --no-save --no-package-lock playwright@1.55.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Launch local static site
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/sci-builder-http.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8765/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/sci-builder-http.log
+          exit 1
+      - name: Verify desktop and mobile open/close geometry
+        run: node --test tests/builder-slide.browser.cjs

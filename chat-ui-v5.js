@@ -117,32 +117,43 @@
 
     const headBack = 3.5;
     const headWing = 3.5;
-    const tangentProbe = .32;
+    const tangentProbe = .28;
+    const neckLength = 3.55;
+
+    const [tipX, tipY] = pointAt(headDistance);
+    const [probeX, probeY] = pointAt(headDistance - tangentProbe);
+
+    let dx = tipX - probeX;
+    let dy = tipY - probeY;
+    const length = Math.hypot(dx, dy) || 1;
+    dx /= length;
+    dy /= length;
+
     const points = [];
     const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
 
-    // Keep the snake body on its real path all the way to the tip.
     for (let i = 0; i < SUBMIT_SAMPLES; i++) {
       const t = i / (SUBMIT_SAMPLES - 1);
       const distance = tailDistance + SUBMIT_ARROW_LENGTH * t;
-      const [x, y] = pointAt(distance);
+      const behindTip = headDistance - distance;
+
+      let x;
+      let y;
+
+      if (behindTip <= neckLength) {
+        // The last few pixels are a straight continuation through the exact
+        // centre of the V. This prevents the curved body from slipping under
+        // either arm while keeping the head identical to the idle arrow.
+        x = tipX - dx * behindTip;
+        y = tipY - dy * behindTip;
+      } else {
+        [x, y] = pointAt(distance);
+      }
+
       points.push([12 + x, 12 + y]);
     }
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
-
-    // Build the arrowhead from the local tangent of the actual trajectory.
-    // This gives the load arrow the same complete symmetric V as the idle
-    // arrow, without the extra straight segment that previously appeared
-    // behind the head.
-    const [tipX, tipY] = pointAt(headDistance);
-    const [behindX, behindY] = pointAt(headDistance - tangentProbe);
-
-    let dx = tipX - behindX;
-    let dy = tipY - behindY;
-    const length = Math.hypot(dx, dy) || 1;
-    dx /= length;
-    dy /= length;
 
     const px = -dy;
     const py = dx;

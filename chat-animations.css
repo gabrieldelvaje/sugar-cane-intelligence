@@ -113,3 +113,33 @@
   line-height: 1;
   box-shadow: none;
 }
+
+
+/* Keep conversation content from showing through the fixed composer area. */
+body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 18;
+  height: 100px;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.page-shell,
+.page-shell.chat-started {
+  padding-bottom: 176px;
+}
+
+@media (max-width: 650px) {
+  body::after {
+    height: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .page-shell,
+  .page-shell.chat-started {
+    padding-bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+  }
+}

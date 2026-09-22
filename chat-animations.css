@@ -115,23 +115,16 @@
 }
 
 
-/* Opaque strip below the fixed composer.
-   It is anchored to the pill itself so, on iOS Safari, no page content can
-   remain visible between the composer and the browser controls. */
-.question-bar {
-  isolation: isolate;
-}
-
-.question-bar::after {
+/* Keep the area strictly below the fixed composer opaque.
+   The mask lives behind the composer, so it never covers the pill itself. */
+body::after {
   content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  z-index: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  transform: translateX(-50%);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 19;
+  height: 20px;
   background: var(--bg);
   pointer-events: none;
 }
@@ -142,6 +135,10 @@
 }
 
 @media (max-width: 650px) {
+  body::after {
+    height: 12px;
+  }
+
   .page-shell,
   .page-shell.chat-started {
     padding-bottom: calc(168px + env(safe-area-inset-bottom, 0px));

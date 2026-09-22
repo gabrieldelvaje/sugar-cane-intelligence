@@ -118,7 +118,6 @@
     const headBack = 3.5;
     const headWing = 3.5;
     const tangentProbe = .28;
-    const neckLength = 3.55;
 
     const [tipX, tipY] = pointAt(headDistance);
     const [probeX, probeY] = pointAt(headDistance - tangentProbe);
@@ -129,48 +128,73 @@
     dx /= length;
     dy /= length;
 
+    const px = -dy;
+    const py = dx;
+    const tip = [12 + tipX, 12 + tipY];
+
+    // Circular-arrow geometry like U+21BA/U+21BB:
+    // one side of the head is the continuation of the shaft itself;
+    // the other side is the short inward arm. This avoids drawing a full V
+    // on top of the curved body.
+    const circularBase = [
+      tip[0] - dx * headBack,
+      tip[1] - dy * headBack
+    ];
+    const circularWing = [
+      tip[0] + px * headWing,
+      tip[1] + py * headWing
+    ];
+
+    // Exact idle/final V geometry, used only while entering/leaving the load.
+    const idleLeft = [
+      tip[0] - dx * headBack + px * headWing,
+      tip[1] - dy * headBack + py * headWing
+    ];
+    const idleRight = [
+      tip[0] - dx * headBack - px * headWing,
+      tip[1] - dy * headBack - py * headWing
+    ];
+
+    let idleMix = 0;
+    if (pointAt === submitOrbitPoint) {
+      const arc = Math.max(0, headDistance - SUBMIT_ARROW_LENGTH);
+      idleMix = 1 - submitClamp(arc / 2.8);
+    } else if (pointAt === submitFinishPoint) {
+      idleMix = submitClamp(
+        (headDistance - (SUBMIT_ARROW_LENGTH - 2.8)) / 2.8
+      );
+    }
+
+    // While orbiting, stop the body exactly at circularBase. As the loader
+    // returns to the idle arrow, progressively let the shaft reach the tip.
+    const trim = headBack * (1 - idleMix);
+    const bodyEndDistance = headDistance - trim;
+    const bodyLength = SUBMIT_ARROW_LENGTH - trim;
+    const tailDistance = bodyEndDistance - bodyLength;
     const points = [];
-    const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
 
     for (let i = 0; i < SUBMIT_SAMPLES; i++) {
       const t = i / (SUBMIT_SAMPLES - 1);
-      const distance = tailDistance + SUBMIT_ARROW_LENGTH * t;
-      const behindTip = headDistance - distance;
-
-      let x;
-      let y;
-
-      if (behindTip <= neckLength) {
-        // The last few pixels are a straight continuation through the exact
-        // centre of the V. This prevents the curved body from slipping under
-        // either arm while keeping the head identical to the idle arrow.
-        x = tipX - dx * behindTip;
-        y = tipY - dy * behindTip;
-      } else {
-        [x, y] = pointAt(distance);
-      }
-
+      const distance = tailDistance + bodyLength * t;
+      const [x, y] = pointAt(distance);
       points.push([12 + x, 12 + y]);
     }
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
 
-    const px = -dy;
-    const py = dx;
-    const tip = [12 + tipX, 12 + tipY];
-
-    const left = [
-      tip[0] - dx * headBack + px * headWing,
-      tip[1] - dy * headBack + py * headWing
+    // Morph between the integrated circular-arrow head and the exact idle V.
+    const first = [
+      circularBase[0] + (idleLeft[0] - circularBase[0]) * idleMix,
+      circularBase[1] + (idleLeft[1] - circularBase[1]) * idleMix
     ];
-    const right = [
-      tip[0] - dx * headBack - px * headWing,
-      tip[1] - dy * headBack - py * headWing
+    const last = [
+      circularWing[0] + (idleRight[0] - circularWing[0]) * idleMix,
+      circularWing[1] + (idleRight[1] - circularWing[1]) * idleMix
     ];
 
     submitLoaderHead.setAttribute(
       'd',
-      `M ${left[0].toFixed(2)} ${left[1].toFixed(2)} L ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} L ${right[0].toFixed(2)} ${right[1].toFixed(2)}`
+      `M ${first[0].toFixed(2)} ${first[1].toFixed(2)} L ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} L ${last[0].toFixed(2)} ${last[1].toFixed(2)}`
     );
 
     if (submitLoaderGroup) {

@@ -83,6 +83,7 @@
     if (!chart) return html;
 
     tableWrap.insertAdjacentHTML('beforebegin', chart);
+    fragment.querySelector('.kpis')?.remove();
     tableWrap.remove();
     return fragment.innerHTML;
   };

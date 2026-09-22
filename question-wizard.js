@@ -210,9 +210,7 @@
     } else {
       const summary = document.createElement('p'); summary.className = 'qb-wizard-summary';
       summary.textContent = question();
-      const note = document.createElement('p'); note.className = 'qb-wizard-note';
-      note.textContent = 'A pergunta será enviada ao chat com a animação normal.';
-      view.append(summary, note);
+      view.append(summary);
     }
     back.textContent = step === 0 ? 'Fechar' : 'Voltar';
     next.textContent = key === 'review' ? 'Enviar pergunta ↑' : 'Avançar →';

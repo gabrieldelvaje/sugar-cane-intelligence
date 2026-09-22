@@ -307,7 +307,20 @@
       // falling on screen (cos > 0) gets faster and a little longer;
       // climbing (cos < 0) gets slower and a little shorter.
       const gravityPhase = Math.cos(angle);
-      const speedFactor = 1 + .28 * gravityPhase;
+
+      // Only the very first exit from the Y axis gets an extra push so the
+      // arrow clears the rounded elbow quickly. The boost fades out before
+      // the normal circular loading motion takes over.
+      const initialArc = Math.max(
+        0,
+        submitLoaderDistance - SUBMIT_ARROW_LENGTH
+      );
+      const exitProgress = submitClamp(
+        initialArc / (SUBMIT_EXIT_JOIN_LENGTH * 1.15)
+      );
+      const exitBoost = 1 + .75 * (1 - submitEase(exitProgress));
+
+      const speedFactor = (1 + .28 * gravityPhase) * exitBoost;
       submitLoaderDistance += baseSpeed * speedFactor * delta;
 
       submitLoaderVisibleLength =

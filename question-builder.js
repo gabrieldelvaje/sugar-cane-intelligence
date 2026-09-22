@@ -66,6 +66,7 @@
   const submit = $('#qb-submit');
   let action = 'leader';
   let open = false;
+  let panelTransitionToken = 0;
   let cities = [];
   let indexedRows = null;
   const selected = { first: null, second: null };
@@ -229,20 +230,66 @@
   function setOpen(next, restoreFocus = true) {
     if (open === next) return;
     if (next && send.disabled) return;
+
     open = next;
-    backdrop.hidden = !next;
-    document.body.classList.toggle('question-builder-open', next);
-    form.classList.toggle('question-builder-active', next);
-    panel.setAttribute('aria-hidden', String(!next));
+    const token = ++panelTransitionToken;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    hideResults('first'); hideResults('second');
     toggle.setAttribute('aria-expanded', String(next));
     toggle.title = next ? 'Fechar o menu de perguntas' : 'Montar pergunta';
-    hideResults('first'); hideResults('second');
+
     if (next) {
+      backdrop.hidden = false;
+      document.body.classList.add('question-builder-open');
+      form.classList.add('question-builder-active');
+      panel.setAttribute('aria-hidden', 'false');
+
+      panel.classList.remove('qb-panel-closing', 'qb-panel-opening');
+      // Restart the two-stage opening even if the panel was closed moments ago.
+      void panel.offsetWidth;
+      if (!reducedMotion) panel.classList.add('qb-panel-opening');
+
       if (document.activeElement === input) input.blur();
       indexCities();
       updatePreview();
-      actions.find(button => button.dataset.action === action)?.focus({ preventScroll: true });
-    } else if (restoreFocus) toggle.focus({ preventScroll: true });
+
+      const finishOpen = () => {
+        if (token !== panelTransitionToken || !open) return;
+        panel.classList.remove('qb-panel-opening');
+        actions.find(button => button.dataset.action === action)?.focus({ preventScroll: true });
+      };
+
+      if (reducedMotion) finishOpen();
+      else {
+        panel.addEventListener('animationend', finishOpen, { once: true });
+        setTimeout(finishOpen, 520);
+      }
+      return;
+    }
+
+    form.classList.remove('question-builder-active');
+    panel.setAttribute('aria-hidden', 'true');
+    panel.classList.remove('qb-panel-opening', 'qb-panel-closing');
+
+    const finishClose = () => {
+      if (token !== panelTransitionToken || open) return;
+      panel.classList.remove('qb-panel-closing');
+      document.body.classList.remove('question-builder-open');
+      backdrop.hidden = true;
+      if (restoreFocus) toggle.focus({ preventScroll: true });
+    };
+
+    if (reducedMotion) {
+      finishClose();
+      return;
+    }
+
+    // Keep the panel mounted while it collapses X first, then Y.
+    void panel.offsetWidth;
+    panel.classList.add('qb-panel-closing');
+    panel.addEventListener('animationend', finishClose, { once: true });
+    setTimeout(finishClose, 520);
   }
   toggle.addEventListener('click', () => setOpen(!open));
   backdrop.addEventListener('click', () => setOpen(false));

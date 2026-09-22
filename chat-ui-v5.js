@@ -35,20 +35,45 @@
   // Animation is always on. Keep only the light/dark theme control in the header.
   const motionOn = true;
 
+  let submitLoaderTimer = 0;
+
   function setSubmitLoading(loading) {
-    submit.classList.toggle('is-loading', loading);
+    clearTimeout(submitLoaderTimer);
     submit.setAttribute('aria-label', loading ? 'Gerando resposta' : 'Enviar pergunta');
 
-    if (!loading) {
+    if (loading) {
+      submit.classList.add('is-loading');
+
+      const loader = document.createElement('span');
+      loader.className = 'submit-loader-morph';
+      loader.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < 6; i++) loader.append(document.createElement('i'));
+      submit.replaceChildren(loader);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!submit.contains(loader)) return;
+          loader.classList.add('is-formed');
+        });
+      });
+      return;
+    }
+
+    submit.classList.remove('is-loading');
+    const loader = submit.querySelector('.submit-loader-morph');
+    if (!loader) {
       submit.textContent = '↑';
       return;
     }
 
-    const loader = document.createElement('span');
-    loader.className = 'submit-loader';
-    loader.setAttribute('aria-hidden', 'true');
-    for (let i = 0; i < 6; i++) loader.append(document.createElement('i'));
-    submit.replaceChildren(loader);
+    loader.classList.remove('is-formed');
+    loader.classList.add('is-returning');
+
+    submitLoaderTimer = window.setTimeout(() => {
+      if (submit.contains(loader) && !submit.classList.contains('is-loading')) {
+        submit.textContent = '↑';
+      }
+    }, 560);
   }
 
   function bottom() {

@@ -42,8 +42,6 @@
   let submitLoaderHead = null;
   let submitLoaderDistance = 0;
   let submitLoaderLastFrame = 0;
-  let submitLoaderOrbitStarted = 0;
-  let submitLoaderVisibleLength = 0;
 
   const SUBMIT_TAU = Math.PI * 2;
   const SUBMIT_RADIUS = 7;
@@ -114,16 +112,45 @@
     return d;
   }
 
-  function renderSubmitSnake(pointAt, headDistance, scale = 1, visibleLength = SUBMIT_ARROW_LENGTH) {
+  function roundedSubmitTrianglePath(tip, left, right, radius = .95) {
+    const points = [tip, left, right];
+
+    const toward = (from, to, distance) => {
+      const dx = to[0] - from[0];
+      const dy = to[1] - from[1];
+      const length = Math.hypot(dx, dy) || 1;
+      const d = Math.min(distance, length * .42);
+      return [
+        from[0] + dx / length * d,
+        from[1] + dy / length * d
+      ];
+    };
+
+    const tipFromRight = toward(points[0], points[2], radius);
+    const tipToLeft = toward(points[0], points[1], radius);
+    const leftFromTip = toward(points[1], points[0], radius);
+    const leftToRight = toward(points[1], points[2], radius);
+    const rightFromLeft = toward(points[2], points[1], radius);
+    const rightToTip = toward(points[2], points[0], radius);
+
+    return [
+      `M ${tipFromRight[0].toFixed(2)} ${tipFromRight[1].toFixed(2)}`,
+      `Q ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} ${tipToLeft[0].toFixed(2)} ${tipToLeft[1].toFixed(2)}`,
+      `L ${leftFromTip[0].toFixed(2)} ${leftFromTip[1].toFixed(2)}`,
+      `Q ${left[0].toFixed(2)} ${left[1].toFixed(2)} ${leftToRight[0].toFixed(2)} ${leftToRight[1].toFixed(2)}`,
+      `L ${rightFromLeft[0].toFixed(2)} ${rightFromLeft[1].toFixed(2)}`,
+      `Q ${right[0].toFixed(2)} ${right[1].toFixed(2)} ${rightToTip[0].toFixed(2)} ${rightToTip[1].toFixed(2)}`,
+      'Z'
+    ].join(' ');
+  }
+
+  function renderSubmitSnake(pointAt, headDistance, scale = 1) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
 
-    // Same geometry as the CSS border-triangle loader reference:
-    // the shaft stops at the base of a real triangular arrowhead.
-    // At rest this is exactly: tip (12,5), base from (8.5,8.5) to (15.5,8.5).
-    const headBack = 3.5;
-    const headWing = 3.5;
-    visibleLength = Math.max(headBack + 1.8, visibleLength);
-    const tailDistance = headDistance - visibleLength;
+    // Larger head, still joined cleanly to the rounded shaft.
+    const headBack = 4;
+    const headWing = 4;
+    const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
     const bodyEndDistance = headDistance - headBack;
     const points = [];
 
@@ -159,11 +186,9 @@
       base[1] - py * headWing
     ];
 
-    // Filled triangle, equivalent to the CSS ::after border triangle.
-    // Because the shaft ends at its base, nothing can overlap behind the tip.
     submitLoaderHead.setAttribute(
       'd',
-      `M ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} L ${left[0].toFixed(2)} ${left[1].toFixed(2)} L ${right[0].toFixed(2)} ${right[1].toFixed(2)} Z`
+      roundedSubmitTrianglePath(tip, left, right)
     );
 
     if (submitLoaderGroup) {
@@ -183,12 +208,7 @@
     if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
 
     submitLoaderLastFrame = performance.now();
-    submitLoaderOrbitStarted = submitLoaderLastFrame;
-    submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
     const baseSpeed = SUBMIT_CIRCUMFERENCE / 1.55;
-    const dashDuration = 1400;
-    const minLength = 7;
-    const maxLength = 21;
 
     const frame = now => {
       if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
@@ -200,19 +220,7 @@
       const speedFactor = 1 + .14 * Math.sin(angle + .45);
       submitLoaderDistance += baseSpeed * speedFactor * delta;
 
-      // Material-spinner style dash motion: while the head keeps rotating,
-      // the visible arrow grows and then contracts continuously.
-      const phase = ((now - submitLoaderOrbitStarted) % dashDuration) / dashDuration;
-      const wave = (Math.sin(phase * SUBMIT_TAU) + 1) / 2;
-      const easedWave = submitEase(wave);
-      submitLoaderVisibleLength = minLength + (maxLength - minLength) * easedWave;
-
-      renderSubmitSnake(
-        submitOrbitPoint,
-        submitLoaderDistance,
-        1,
-        submitLoaderVisibleLength
-      );
+      renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
       submitLoaderRaf = requestAnimationFrame(frame);
     };
 
@@ -230,7 +238,6 @@
     if (targetArc <= currentArc + .35) targetArc += SUBMIT_CIRCUMFERENCE;
 
     const startDistance = submitLoaderDistance;
-    const startVisibleLength = submitLoaderVisibleLength || SUBMIT_ARROW_LENGTH;
     const targetDistance = SUBMIT_ARROW_LENGTH + targetArc;
     const travel = targetDistance - startDistance;
     const duration = Math.max(250, Math.min(470, 230 + travel * 9));
@@ -251,15 +258,8 @@
 
         submitLoaderDistance = startDistance + travel * progress;
         const scale = 1 + .085 * Math.sin(Math.PI * raw);
-        const visibleLength = startVisibleLength +
-          (SUBMIT_ARROW_LENGTH - startVisibleLength) * submitEase(raw);
 
-        renderSubmitSnake(
-          submitOrbitPoint,
-          submitLoaderDistance,
-          scale,
-          visibleLength
-        );
+        renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, scale);
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -333,7 +333,6 @@
       submitLoaderShaft = shaft;
       submitLoaderHead = head;
       submitLoaderDistance = SUBMIT_ARROW_LENGTH;
-      submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
 
       // At distance = 2R the body occupies the complete Y-axis diameter:
       // exactly the original upward arrow. The next frame bends only the tip.
@@ -351,7 +350,6 @@
       submitLoaderGroup = null;
       submitLoaderShaft = null;
       submitLoaderHead = null;
-      submitLoaderVisibleLength = 0;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
       return;

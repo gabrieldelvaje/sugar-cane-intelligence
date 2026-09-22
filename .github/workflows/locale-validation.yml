@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'locale-*.js'
-      - 'tests/locale.test.cjs'
+      - 'tests/locale*.test.cjs'
       - '.github/workflows/locale-validation.yml'
   workflow_dispatch:
 
@@ -18,5 +18,7 @@ jobs:
           node --check locale-answers.js
           node --check locale-ui.js
           node --check locale-followups.js
-      - name: Run bilingual question tests
-        run: node --test tests/locale.test.cjs
+      - name: Install test-only browser DOM
+        run: npm install --no-save --no-package-lock jsdom@26
+      - name: Run bilingual question and interface tests
+        run: node --test tests/locale*.test.cjs

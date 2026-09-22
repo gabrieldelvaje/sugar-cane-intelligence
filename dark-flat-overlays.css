@@ -1,7 +1,7 @@
-/* Floating UI remains flat in dark mode: no drop shadows, glows, or
-   shadow-like filters. This file is loaded after the component styles so
-   it also overrides their hover/open/focus states without changing motion. */
-[data-theme="dark"] :is(
+/* Match floating UI in both themes: no projected shadows or glows.
+   Borders and backgrounds still follow each theme's palette; slide motion
+   and tooltip placement remain controlled by their own styles/scripts. */
+:root :is(
   .question-builder-panel,
   .sci-language-control,
   .sci-language-toggle,
@@ -20,7 +20,7 @@
   [role="tooltip"],
   [popover]
 ),
-[data-theme="dark"] :is(
+:root :is(
   .question-builder-panel,
   .sci-language-control,
   .sci-language-toggle,
@@ -39,7 +39,7 @@
   [role="tooltip"],
   [popover]
 )::before,
-[data-theme="dark"] :is(
+:root :is(
   .question-builder-panel,
   .sci-language-control,
   .sci-language-toggle,
@@ -63,9 +63,11 @@
   -webkit-filter: none !important;
 }
 
-/* The question builder's screen overlay must not tint its surroundings green.
-   This is a neutral backdrop, not a projected shadow from the panel. */
+/* Use the same neutral, restrained screen dimmer for either theme. */
+.question-builder-backdrop:not([hidden]) {
+  background: rgba(0, 0, 0, 0.10);
+  box-shadow: none !important;
+}
 [data-theme="dark"] .question-builder-backdrop:not([hidden]) {
   background: rgba(0, 0, 0, 0.12);
-  box-shadow: none !important;
 }

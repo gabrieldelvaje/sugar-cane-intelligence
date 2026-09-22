@@ -35,6 +35,20 @@
   // Animation is always on. Keep only the light/dark theme control in the header.
   const motionOn = true;
 
+  function setSubmitLoading(loading) {
+    submit.classList.toggle('is-loading', loading);
+    submit.setAttribute('aria-label', loading ? 'Gerando resposta' : 'Enviar pergunta');
+    if (!loading) {
+      submit.textContent = '↑';
+      return;
+    }
+    const loader = document.createElement('span');
+    loader.className = 'lds-default';
+    loader.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 12; i++) loader.append(document.createElement('i'));
+    submit.replaceChildren(loader);
+  }
+
   function bottom() {
     // Repeated smooth scrolling on every token makes Chrome lag and jump.
     window.scrollTo({ top: Math.max(0, document.documentElement.scrollHeight - innerHeight), behavior: 'instant' });
@@ -144,6 +158,7 @@
     input.value = '';
     input.disabled = true;
     submit.disabled = true;
+    setSubmitLoading(true);
     hero.hidden = true;
     page.classList.add('chat-started');
 
@@ -218,6 +233,7 @@
     busy = false;
     input.disabled = false;
     submit.disabled = false;
+    setSubmitLoading(false);
     bottom();
     input.focus({ preventScroll: true });
   }
@@ -244,6 +260,7 @@
     busy = false;
     input.disabled = false;
     submit.disabled = false;
+    setSubmitLoading(false);
     page.classList.remove('chat-started');
     // The original handler clears the conversation and restores initial buttons.
   }, true);

@@ -1,17 +1,17 @@
-/* Restrict the neutral palette to generated bot results. Keep the agricultural
-   green on the composer, question bubble, opening suggestions and navigation. */
+/* Restrict the neutral palette to generated bot results. Both themes use
+   layered neutral surfaces; accent green belongs to interactive highlights. */
 :root {
-  --answer-card-bg: #f5f6f7;
-  --answer-table-bg: #ffffff;
-  --answer-chart-bg: #f1f3f4;
-  --answer-table-head-bg: #f1f3f4;
-  --answer-border: #dce0e3;
-  --answer-separator: #e4e7e9;
+  --answer-card-bg: #edf0f3;
+  --answer-table-bg: #f0f2f5;
+  --answer-chart-bg: #e9edf1;
+  --answer-table-head-bg: #e7ebf0;
+  --answer-border: #cfd7df;
+  --answer-separator: #d9dfe6;
   --answer-muted: #68717a;
-  --answer-suggestion-bg: #f7f8f9;
-  --answer-suggestion-border: #e5e8eb;
-  --answer-suggestion-text: #727b84;
-  --answer-suggestion-hover-bg: #eef1f2;
+  --answer-suggestion-bg: #edf0f3;
+  --answer-suggestion-border: #d6dde4;
+  --answer-suggestion-text: #68727c;
+  --answer-suggestion-hover-bg: #e5e9ee;
   --answer-suggestion-hover-border: #bfc8cb;
 }
 [data-theme="dark"] {

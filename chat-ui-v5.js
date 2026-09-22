@@ -42,6 +42,7 @@
   let submitLoaderHead = null;
   let submitLoaderDistance = 0;
   let submitLoaderLastFrame = 0;
+  let submitLoaderVisibleLength = 0;
 
   const SUBMIT_TAU = Math.PI * 2;
   const SUBMIT_RADIUS = 7;
@@ -62,10 +63,10 @@
   // Rounded joins between the Y axis and the circular orbit.
   // The tip keeps its original top/bottom points, but leaves/enters them
   // through a cubic fillet instead of a hard 90-degree corner.
-  const SUBMIT_EXIT_JOIN_LENGTH = 5.2;
-  const SUBMIT_EXIT_JOIN_HANDLE = 2.8;
-  const SUBMIT_RETURN_JOIN_LENGTH = 3.2;
-  const SUBMIT_RETURN_JOIN_HANDLE = 1.6;
+  const SUBMIT_EXIT_JOIN_LENGTH = 6.1;
+  const SUBMIT_EXIT_JOIN_HANDLE = 3.4;
+  const SUBMIT_RETURN_JOIN_LENGTH = 5.6;
+  const SUBMIT_RETURN_JOIN_HANDLE = 3.1;
 
   function submitCubicPoint(p0, p1, p2, p3, t) {
     const u = 1 - t;
@@ -193,13 +194,14 @@
     ].join(' ');
   }
 
-  function renderSubmitSnake(pointAt, headDistance, scale = 1) {
+  function renderSubmitSnake(pointAt, headDistance, scale = 1, visibleLength = SUBMIT_ARROW_LENGTH) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
 
     // Larger head, still joined cleanly to the rounded shaft.
     const headBack = 4;
     const headWing = 4;
-    const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
+    visibleLength = Math.max(headBack + 2, visibleLength);
+    const tailDistance = headDistance - visibleLength;
     const bodyEndDistance = headDistance - headBack;
     const points = [];
 
@@ -257,6 +259,7 @@
     if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
 
     submitLoaderLastFrame = performance.now();
+    submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
     const baseSpeed = SUBMIT_CIRCUMFERENCE / 1.55;
 
     const frame = now => {
@@ -266,10 +269,23 @@
       submitLoaderLastFrame = now;
 
       const angle = currentSubmitAngle();
-      const speedFactor = 1 + .14 * Math.sin(angle + .45);
+
+      // Gravity feel only inside the arrow orbit:
+      // falling on screen (cos > 0) gets faster and a little longer;
+      // climbing (cos < 0) gets slower and a little shorter.
+      const gravityPhase = Math.cos(angle);
+      const speedFactor = 1 + .28 * gravityPhase;
       submitLoaderDistance += baseSpeed * speedFactor * delta;
 
-      renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
+      submitLoaderVisibleLength =
+        SUBMIT_ARROW_LENGTH + 1.4 * gravityPhase;
+
+      renderSubmitSnake(
+        submitOrbitPoint,
+        submitLoaderDistance,
+        1,
+        submitLoaderVisibleLength
+      );
       submitLoaderRaf = requestAnimationFrame(frame);
     };
 
@@ -287,6 +303,7 @@
     if (targetArc <= currentArc + .35) targetArc += SUBMIT_CIRCUMFERENCE;
 
     const startDistance = submitLoaderDistance;
+    const startVisibleLength = submitLoaderVisibleLength || SUBMIT_ARROW_LENGTH;
     const targetDistance = SUBMIT_ARROW_LENGTH + targetArc;
     const travel = targetDistance - startDistance;
     const duration = Math.max(250, Math.min(470, 230 + travel * 9));
@@ -307,8 +324,15 @@
 
         submitLoaderDistance = startDistance + travel * progress;
         const scale = 1 + .085 * Math.sin(Math.PI * raw);
+        const visibleLength = startVisibleLength +
+          (SUBMIT_ARROW_LENGTH - startVisibleLength) * submitEase(raw);
 
-        renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, scale);
+        renderSubmitSnake(
+          submitOrbitPoint,
+          submitLoaderDistance,
+          scale,
+          visibleLength
+        );
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -382,6 +406,7 @@
       submitLoaderShaft = shaft;
       submitLoaderHead = head;
       submitLoaderDistance = SUBMIT_ARROW_LENGTH;
+      submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
 
       // At distance = 2R the body occupies the complete Y-axis diameter:
       // exactly the original upward arrow. The next frame bends only the tip.
@@ -399,6 +424,7 @@
       submitLoaderGroup = null;
       submitLoaderShaft = null;
       submitLoaderHead = null;
+      submitLoaderVisibleLength = 0;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
       return;

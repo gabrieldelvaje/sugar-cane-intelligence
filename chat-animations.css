@@ -128,7 +128,9 @@
 }
 
 .question-bar button[type="submit"].is-loading,
-.question-bar button[type="submit"].is-loading:disabled {
+.question-bar button[type="submit"].is-loading:disabled,
+.question-bar button[type="submit"].is-returning,
+.question-bar button[type="submit"].is-returning:disabled {
   opacity: 1;
   cursor: wait;
 }
@@ -161,9 +163,9 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 3px;
-  height: 3px;
-  margin: -1.5px 0 0 -1.5px;
+  width: 4.2px;
+  height: 4.2px;
+  margin: -2.1px 0 0 -2.1px;
   border-radius: 50%;
   background: currentColor;
   will-change: transform, opacity;

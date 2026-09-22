@@ -10,7 +10,7 @@
   --accent: #93bd68;
 }
 [data-theme="dark"] {
-  --bg: #101813;
+  --bg: #000000;
   --surface: #19271e;
   --surface2: #233528;
   --text: #edf7ef;

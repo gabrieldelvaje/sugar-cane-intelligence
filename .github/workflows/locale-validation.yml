@@ -16,9 +16,11 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check locale-answers.js
-          node --check locale-ui.js
+          node --check locale-ui-dictionary.js
+          node --check locale-ui-stable.js
+          node --check locale-state-bridge.js
           node --check locale-followups.js
       - name: Install test-only browser DOM
         run: npm install --no-save --no-package-lock jsdom@26
       - name: Run bilingual question and interface tests
-        run: node --test tests/locale*.test.cjs
+        run: timeout 45s node --test tests/locale*.test.cjs

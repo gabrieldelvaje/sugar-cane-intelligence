@@ -15,11 +15,11 @@
 
     const shaft = document.createElementNS(SVG_NS, 'path');
     shaft.setAttribute('class', 'submit-snake-shaft');
-    shaft.setAttribute('d', 'M12 19 L12 8.5');
+    shaft.setAttribute('d', 'M12 19 L12 9');
 
     const head = document.createElementNS(SVG_NS, 'path');
     head.setAttribute('class', 'submit-snake-head');
-    head.setAttribute('d', 'M12 5 L15.5 8.5 L8.5 8.5 Z');
+    head.setAttribute('d', 'M12.64 5.64 Q12 5 11.36 5.64 L8.64 8.36 Q8 9 8.95 9 L15.05 9 Q16 9 15.36 8.36 Z');
 
     svg.append(shaft, head);
     return svg;

@@ -21,8 +21,9 @@
     'Quais municípios tiveram maior produtividade em São Paulo em 2024?',
     'Qual foi a precipitação em Ribeirão Preto em 2024?',
     'Qual município teve maior área colhida em 2024?',
-    'Qual foi a temperatura média em Piracicaba em 2024?',
     'Quais são os 10 maiores produtores de Minas Gerais em 2020?',
+    'Qual foi a temperatura média em Piracicaba em 2024?',
+    'Qual foi a produção de cana em Piracicaba em 2024?',
     'Compare a produtividade de Piracicaba e Ribeirão Preto entre 2010 e 2024.',
     'Qual município teve maior produção em Goiás em 2024?',
     'Qual foi a área colhida em Piracicaba em 2024?',
@@ -308,17 +309,13 @@
       // climbing (cos < 0) gets slower and a little shorter.
       const gravityPhase = Math.cos(angle);
 
-      // Only the very first exit from the Y axis gets an extra push so the
-      // arrow clears the rounded elbow quickly. The boost fades out before
-      // the normal circular loading motion takes over.
-      const initialArc = Math.max(
-        0,
-        submitLoaderDistance - SUBMIT_ARROW_LENGTH
-      );
-      const exitProgress = submitClamp(
-        initialArc / (SUBMIT_EXIT_JOIN_LENGTH * 1.15)
-      );
-      const exitBoost = 1 + 2.1 * (1 - submitEase(exitProgress));
+      // Accelerate the entire first entry: keep the extra push while any of
+      // the tail is still on the Y axis. Once the tail enters the circle,
+      // smoothly return to the existing gravity-based orbit speed.
+      const tailDistance = submitLoaderDistance -
+        submitOrbitVisibleLength(submitLoaderDistance);
+      const exitProgress = submitClamp(tailDistance / SUBMIT_ARROW_LENGTH);
+      const exitBoost = 1 + 2.6 * (1 - submitEase(exitProgress));
 
       const speedFactor = (1 + .28 * gravityPhase) * exitBoost;
       submitLoaderDistance += baseSpeed * speedFactor * delta;

@@ -3,6 +3,7 @@
 :root {
   --answer-card-bg: #f5f6f7;
   --answer-table-bg: #ffffff;
+  --answer-chart-bg: #f1f3f4;
   --answer-table-head-bg: #f1f3f4;
   --answer-border: #dce0e3;
   --answer-separator: #e4e7e9;
@@ -16,6 +17,7 @@
 [data-theme="dark"] {
   --answer-card-bg: #25292b;
   --answer-table-bg: #1b2021;
+  --answer-chart-bg: #25292b;
   --answer-table-head-bg: #292f31;
   --answer-border: #42494c;
   --answer-separator: #363e40;
@@ -25,6 +27,10 @@
   --answer-suggestion-text: #adb5b9;
   --answer-suggestion-hover-bg: #2a3032;
   --answer-suggestion-hover-border: #68777c;
+}
+
+.conversation .message.assistant .chart {
+  background: var(--answer-chart-bg);
 }
 
 .conversation .message.assistant .kpi {

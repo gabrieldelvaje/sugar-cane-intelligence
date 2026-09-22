@@ -135,38 +135,31 @@
   cursor: wait;
 }
 
-.submit-arrow-loader,
-.submit-arrow-loader * {
-  box-sizing: border-box;
-}
-
-.submit-arrow-loader {
-  position: relative;
-  display: inline-block;
-  width: 24px;
-  height: 24px;
+.submit-circular-arrow {
+  display: block;
+  width: 26px;
+  height: 26px;
+  overflow: visible;
   color: currentColor;
 }
 
-.submit-arrow-runner {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  margin: -9px 0 0 -9px;
-  display: grid;
-  place-items: center;
-  color: currentColor;
-  font-size: 22px;
-  line-height: 1;
-  transform-origin: center;
+.submit-circular-arrow-shaft,
+.submit-circular-arrow-head {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.submit-circular-arrow g {
+  transform-origin: 12px 12px;
   will-change: transform;
-  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .submit-arrow-runner {
+  .submit-circular-arrow g {
     will-change: auto;
   }
 }

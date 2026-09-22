@@ -38,6 +38,8 @@
   let submitLoaderRaf = 0;
   let submitLoaderAnimations = [];
   let submitLoaderOrbitStarted = 0;
+  let submitLoaderLastFrame = 0;
+  let submitLoaderAngles = [];
   let submitLoaderElement = null;
 
   const submitArrowPoints = [
@@ -86,14 +88,26 @@
     if (!submit.classList.contains('is-loading') || submitLoaderElement !== loader) return;
     const dots = [...loader.querySelectorAll('i')];
     submitLoaderOrbitStarted = performance.now();
+    submitLoaderLastFrame = submitLoaderOrbitStarted;
+    submitLoaderAngles = [...submitCircleAngles];
+
+    const baseSpeed = Math.PI * 2 / 1.5;
 
     const frame = now => {
       if (!submit.classList.contains('is-loading') || submitLoaderElement !== loader) return;
-      const elapsed = (now - submitLoaderOrbitStarted) / 1000;
-      const rotation = elapsed * (Math.PI * 2 / 1.45);
+
+      const delta = Math.min(.035, Math.max(0, (now - submitLoaderLastFrame) / 1000));
+      submitLoaderLastFrame = now;
 
       dots.forEach((dot, index) => {
-        const point = circlePoint(submitCircleAngles[index] + rotation);
+        const angle = submitLoaderAngles[index];
+
+        // Slow strongly around the bottom of the circle so the dots bunch up,
+        // then accelerate continuously as they climb back toward the top.
+        const speedFactor = Math.max(.28, Math.min(1.9, 1.08 - .78 * Math.sin(angle)));
+        submitLoaderAngles[index] = angle + baseSpeed * speedFactor * delta;
+
+        const point = circlePoint(submitLoaderAngles[index]);
         dot.style.transform = translatePoint(point);
         dot.style.opacity = '1';
       });
@@ -236,11 +250,13 @@
     }
 
     submit.classList.remove('is-loading');
+    submit.classList.add('is-returning');
     const loader = submitLoaderElement || submit.querySelector('.submit-loader-orbit');
 
     if (!loader || instant) {
       cancelSubmitLoaderMotion();
       submitLoaderElement = null;
+      submit.classList.remove('is-returning');
       submit.textContent = '↑';
       return;
     }
@@ -250,6 +266,7 @@
     if (submitLoaderElement === loader && !submit.classList.contains('is-loading')) {
       cancelSubmitLoaderMotion();
       submitLoaderElement = null;
+      submit.classList.remove('is-returning');
       submit.textContent = '↑';
     }
   }

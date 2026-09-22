@@ -201,7 +201,17 @@
     const headBack = 4;
     const headWing = 4;
     visibleLength = Math.max(headBack + 2, visibleLength);
-    const tailDistance = headDistance - visibleLength;
+
+    const rawTailDistance = headDistance - visibleLength;
+    let tailDistance = rawTailDistance;
+
+    // During the initial exit from the Y axis, never let the tail extend
+    // below the circle. The extra length is created forward by the tip
+    // entering the orbit; once there is enough room, the tail follows normally.
+    if (pointAt === submitOrbitPoint) {
+      tailDistance = Math.max(0, rawTailDistance);
+    }
+
     const bodyEndDistance = headDistance - headBack;
     const points = [];
 

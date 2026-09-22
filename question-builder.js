@@ -227,6 +227,33 @@
     select.addEventListener('change', syncFields);
   }
 
+  function syncPanelAnimationOrigin() {
+    // Measure the panel in its fully-open geometry, then make the collapsed
+    // state the same size and horizontal position as the builder button.
+    const panelRect = panel.getBoundingClientRect();
+    const toggleRect = toggle.getBoundingClientRect();
+
+    if (!panelRect.width || !panelRect.height || !toggleRect.width || !toggleRect.height) return;
+
+    const toggleCenterX = toggleRect.left + toggleRect.width / 2;
+    const originX = Math.max(
+      toggleRect.width / 2,
+      Math.min(panelRect.width - toggleRect.width / 2, toggleCenterX - panelRect.left)
+    );
+
+    const collapsedScaleX = Math.max(.025, Math.min(1, toggleRect.width / panelRect.width));
+    const collapsedScaleY = Math.max(.04, Math.min(1, toggleRect.height / panelRect.height));
+
+    // Move the collapsed panel down so its bottom edge sits on the button.
+    // As Y expands, this offset resolves to zero and the panel grows upward.
+    const collapsedOffsetY = toggleRect.bottom - panelRect.bottom;
+
+    panel.style.setProperty('--qb-origin-x', `${originX}px`);
+    panel.style.setProperty('--qb-collapsed-scale-x', collapsedScaleX.toFixed(4));
+    panel.style.setProperty('--qb-collapsed-scale-y', collapsedScaleY.toFixed(4));
+    panel.style.setProperty('--qb-collapsed-offset-y', `${collapsedOffsetY.toFixed(2)}px`);
+  }
+
   function setOpen(next, restoreFocus = true) {
     if (open === next) return;
     if (next && send.disabled) return;
@@ -246,6 +273,11 @@
       panel.setAttribute('aria-hidden', 'false');
 
       panel.classList.remove('qb-panel-closing', 'qb-panel-opening');
+
+      // The open-state rule gives us the panel's final desktop/mobile geometry.
+      // Anchor the collapsed state to the actual builder button before animating.
+      syncPanelAnimationOrigin();
+
       // Restart the two-stage opening even if the panel was closed moments ago.
       void panel.offsetWidth;
       if (!reducedMotion) panel.classList.add('qb-panel-opening');
@@ -291,6 +323,9 @@
     panel.addEventListener('animationend', finishClose, { once: true });
     setTimeout(finishClose, 520);
   }
+  window.addEventListener('resize', () => {
+    if (open) syncPanelAnimationOrigin();
+  });
   toggle.addEventListener('click', () => setOpen(!open));
   backdrop.addEventListener('click', () => setOpen(false));
   $('.qb-close').addEventListener('click', () => setOpen(false));

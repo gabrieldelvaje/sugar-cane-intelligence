@@ -100,7 +100,7 @@
         Math.sin(endAngle) * SUBMIT_RADIUS
       ];
       const tangent = [-Math.sin(endAngle), Math.cos(endAngle)];
-      const p1 = [0, -SUBMIT_RADIUS - SUBMIT_JOIN_HANDLE];
+      const p1 = [0, -SUBMIT_RADIUS - SUBMIT_EXIT_JOIN_HANDLE];
       const p2 = [
         p3[0] - tangent[0] * SUBMIT_EXIT_JOIN_HANDLE,
         p3[1] - tangent[1] * SUBMIT_EXIT_JOIN_HANDLE
@@ -131,7 +131,7 @@
       const p0 = [0, SUBMIT_RADIUS];
       const p1 = [-SUBMIT_RETURN_JOIN_HANDLE, SUBMIT_RADIUS];
       const p3 = [0, SUBMIT_RADIUS - SUBMIT_RETURN_JOIN_LENGTH];
-      const p2 = [0, p3[1] + SUBMIT_JOIN_HANDLE];
+      const p2 = [0, p3[1] + SUBMIT_RETURN_JOIN_HANDLE];
       return submitCubicPoint(p0, p1, p2, p3, t);
     }
 

@@ -18,6 +18,7 @@ async function geometry(page) {
       panelTop: p.top, panelBottom: p.bottom, panelWidth: p.width,
       panelHeight: p.height, open: document.body.classList.contains('question-builder-open'),
       animation: getComputedStyle(panel).animationName,
+      running: panel.getAnimations().some(animation => animation.playState === 'running'),
       stageOverflow: getComputedStyle(stage).overflow,
       stagePosition: getComputedStyle(stage).position,
       panelPosition: getComputedStyle(panel).position,
@@ -27,8 +28,9 @@ async function geometry(page) {
 }
 
 for (const viewport of [
-  { label: 'desktop', width: 1366, height: 800, isMobile: false },
-  { label: 'mobile', width: 390, height: 844, isMobile: true }
+  { label: 'desktop', width: 1366, height: 800, isMobile: false, reducedMotion: 'no-preference' },
+  { label: 'desktop with Windows reduced motion', width: 1366, height: 800, isMobile: false, reducedMotion: 'reduce' },
+  { label: 'mobile', width: 390, height: 844, isMobile: true, reducedMotion: 'no-preference' }
 ]) {
   test(`builder emerges from behind the composer on ${viewport.label}`, async () => {
     const browser = await chromium.launch({ headless: true });
@@ -36,7 +38,7 @@ for (const viewport of [
       viewport: { width: viewport.width, height: viewport.height },
       isMobile: viewport.isMobile,
       hasTouch: viewport.isMobile,
-      reducedMotion: 'no-preference'
+      reducedMotion: viewport.reducedMotion
     });
     const page = await context.newPage();
     try {
@@ -58,9 +60,16 @@ for (const viewport of [
       await toggle.click();
       const opening = await geometry(page);
       assert.equal(opening.open, true);
-      assert.equal(opening.animation, 'qb-panel-open-two-stage');
-      assert.ok(opening.panelTop > -opening.panelHeight, 'opening panel has a real position');
-      await page.waitForTimeout(680);
+      if (viewport.isMobile) assert.equal(opening.animation, 'qb-panel-open-two-stage');
+      else assert.ok(opening.running, `desktop should animate even with reduced motion: ${JSON.stringify(opening)}`);
+      await page.waitForTimeout(135);
+      const midOpen = await geometry(page);
+      assert.ok(midOpen.panelTop < idle.panelTop - 15,
+        `panel must rise continuously, not just appear: ${JSON.stringify(midOpen)}`);
+      assert.ok(midOpen.panelTop > idle.panelTop - idle.panelHeight + 15,
+        `panel should not jump straight to open: ${JSON.stringify(midOpen)}`);
+
+      await page.waitForTimeout(545);
       const fullyOpen = await geometry(page);
       assert.ok(fullyOpen.panelTop < fullyOpen.stageBottom - 40, 'panel rose into view');
       assert.ok(Math.abs(fullyOpen.panelBottom - (fullyOpen.formTop - 8)) <= 3,
@@ -69,11 +78,15 @@ for (const viewport of [
 
       await toggle.click();
       const closing = await geometry(page);
-      assert.equal(closing.animation, 'qb-panel-close-two-stage');
+      if (viewport.isMobile) assert.equal(closing.animation, 'qb-panel-close-two-stage');
+      else assert.ok(closing.running,
+        `desktop must animate close even with reduced motion: ${JSON.stringify(closing)}`);
       await page.waitForTimeout(110);
       const midClose = await geometry(page);
       assert.ok(midClose.panelBottom > fullyOpen.panelBottom + 10,
         `panel must descend rather than disappear: ${JSON.stringify(midClose)}`);
+      assert.ok(midClose.panelBottom < fullyOpen.panelBottom + fullyOpen.panelHeight - 15,
+        `panel should not jump straight to closed: ${JSON.stringify(midClose)}`);
       await page.waitForTimeout(550);
       const closed = await geometry(page);
       assert.equal(closed.open, false);

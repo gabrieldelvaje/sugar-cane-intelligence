@@ -1,0 +1,69 @@
+/* The builder is clipped by a viewport ending at the TOP of the composer.
+   Its full-size panel travels vertically; nothing is scaled or squashed. */
+.qb-slide-viewport {
+  position: fixed;
+  inset: 0 0 var(--qb-slide-dock-bottom, 90px);
+  z-index: 21;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Keep the pill in front of the panel throughout the slide. The backdrop
+   remains below both, and the rest of the chat is unaffected. */
+.question-bar { z-index: 23; }
+
+.qb-slide-viewport > .question-builder-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  z-index: 1;
+  opacity: 1;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, calc(100% + 16px));
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+.question-builder-open .qb-slide-viewport > .question-builder-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.qb-slide-viewport > .question-builder-panel.qb-panel-opening {
+  visibility: visible;
+  animation: qb-panel-open-two-stage 470ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.qb-slide-viewport > .question-builder-panel.qb-panel-closing {
+  visibility: visible;
+  pointer-events: none;
+  animation: qb-panel-close-two-stage 430ms cubic-bezier(.4, 0, .2, 1) both;
+}
+
+/* Preserve the animation names already awaited by question-builder.js.
+   One single Y translation works identically on desktop and mobile. */
+@keyframes qb-panel-open-two-stage {
+  from { transform: translate(-50%, calc(100% + 16px)); }
+  to   { transform: translate(-50%, 0); }
+}
+@keyframes qb-panel-close-two-stage {
+  from { transform: translate(-50%, 0); }
+  to   { transform: translate(-50%, calc(100% + 16px)); }
+}
+
+@media (max-width: 650px) {
+  .qb-slide-viewport > .question-builder-panel {
+    bottom: 8px;
+    width: calc(100% - 20px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qb-slide-viewport > .question-builder-panel.qb-panel-opening,
+  .qb-slide-viewport > .question-builder-panel.qb-panel-closing {
+    animation: none;
+  }
+}

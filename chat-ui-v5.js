@@ -37,76 +37,37 @@
 
   let submitLoaderRaf = 0;
   let submitLoaderElement = null;
-  let submitLoaderGroup = null;
-  let submitLoaderShaft = null;
-  let submitLoaderHead = null;
-  let submitLoaderRotation = 0;
+  let submitLoaderArrow = null;
+  let submitLoaderAngle = Math.PI / 2;
   let submitLoaderLastFrame = 0;
   let submitLoaderEntryPromise = null;
 
-  const SUBMIT_SVG_NS = 'http://www.w3.org/2000/svg';
-  const SUBMIT_STRAIGHT_PATH = [
-    [12,19],
-    [12,17.8],[12,16.7],[12,15.5],
-    [12,14.3],[12,13.2],[12,12],
-    [12,10.8],[12,9.7],[12,8.5],
-    [12,7.3],[12,6.2],[12,5]
-  ];
-  const SUBMIT_CIRCLE_PATH = [
-    [12,4],
-    [16.42,4],[20,7.58],[20,12],
-    [20,16.42],[16.42,20],[12,20],
-    [7.58,20],[4,16.42],[4,12],
-    [4,8],[6,5],[9,4.6]
-  ];
-  const SUBMIT_STRAIGHT_HEAD = [[8.5,8.5],[12,5],[15.5,8.5]];
-  const SUBMIT_CIRCLE_HEAD = [[6.55,4.05],[9,4.6],[8.05,7.0]];
+  const SUBMIT_TAU = Math.PI * 2;
+  const SUBMIT_RADIUS = 6.8;
 
   const submitClamp = value => Math.max(0, Math.min(1, value));
   const submitEase = value => {
     const t = submitClamp(value);
     return t * t * (3 - 2 * t);
   };
+  const submitEaseOut = value => {
+    const t = submitClamp(value);
+    return 1 - Math.pow(1 - t, 3);
+  };
   const submitLerp = (a, b, t) => a + (b - a) * t;
 
-  function submitInterpolatedPoints(from, to, t) {
-    return from.map((point, index) => [
-      submitLerp(point[0], to[index][0], t),
-      submitLerp(point[1], to[index][1], t)
-    ]);
+  function submitCirclePoint(angle) {
+    return [
+      Math.cos(angle) * SUBMIT_RADIUS,
+      -Math.sin(angle) * SUBMIT_RADIUS
+    ];
   }
 
-  function submitPathD(points) {
-    return `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)} ` +
-      `C ${points[1][0].toFixed(2)} ${points[1][1].toFixed(2)} ${points[2][0].toFixed(2)} ${points[2][1].toFixed(2)} ${points[3][0].toFixed(2)} ${points[3][1].toFixed(2)} ` +
-      `C ${points[4][0].toFixed(2)} ${points[4][1].toFixed(2)} ${points[5][0].toFixed(2)} ${points[5][1].toFixed(2)} ${points[6][0].toFixed(2)} ${points[6][1].toFixed(2)} ` +
-      `C ${points[7][0].toFixed(2)} ${points[7][1].toFixed(2)} ${points[8][0].toFixed(2)} ${points[8][1].toFixed(2)} ${points[9][0].toFixed(2)} ${points[9][1].toFixed(2)} ` +
-      `C ${points[10][0].toFixed(2)} ${points[10][1].toFixed(2)} ${points[11][0].toFixed(2)} ${points[11][1].toFixed(2)} ${points[12][0].toFixed(2)} ${points[12][1].toFixed(2)}`;
-  }
-
-  function submitHeadD(points) {
-    return `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)} L ${points[1][0].toFixed(2)} ${points[1][1].toFixed(2)} L ${points[2][0].toFixed(2)} ${points[2][1].toFixed(2)}`;
-  }
-
-  function setSubmitArrowMorph(progress) {
-    const t = submitEase(progress);
-    if (submitLoaderShaft) {
-      submitLoaderShaft.setAttribute('d', submitPathD(
-        submitInterpolatedPoints(SUBMIT_STRAIGHT_PATH, SUBMIT_CIRCLE_PATH, t)
-      ));
-    }
-    if (submitLoaderHead) {
-      submitLoaderHead.setAttribute('d', submitHeadD(
-        submitInterpolatedPoints(SUBMIT_STRAIGHT_HEAD, SUBMIT_CIRCLE_HEAD, t)
-      ));
-    }
-  }
-
-  function setSubmitArrowGroup(rotation = submitLoaderRotation, scale = 1) {
-    if (!submitLoaderGroup) return;
-    submitLoaderGroup.setAttribute(
+  function setSubmitArrowTransform(x, y, rotation = 0, scale = 1) {
+    if (!submitLoaderArrow) return;
+    submitLoaderArrow.setAttribute(
       'transform',
-      `translate(12 12) rotate(${rotation.toFixed(2)}) scale(${scale.toFixed(3)}) translate(-12 -12)`
+      `translate(${(12 + x).toFixed(2)} ${(12 + y).toFixed(2)}) rotate(${rotation.toFixed(2)}) scale(${scale.toFixed(3)}) translate(-12 -12)`
     );
   }
 
@@ -115,30 +76,27 @@
     submitLoaderRaf = 0;
   }
 
-  function animateSubmitMorph(from, to, duration) {
+  function animateSubmitArrowState(from, to, duration, easing = submitEase) {
     cancelSubmitLoaderMotion();
 
     return new Promise(resolve => {
       const started = performance.now();
 
       const frame = now => {
-        if (!submitLoaderElement) {
+        if (!submitLoaderArrow) {
           resolve();
           return;
         }
 
         const raw = submitClamp((now - started) / duration);
-        const eased = submitEase(raw);
-        setSubmitArrowMorph(submitLerp(from, to, eased));
+        const t = easing(raw);
 
-        // While the straight arrow bends into a ring, let it begin walking
-        // around the center so the transition feels continuous.
-        if (to > from) {
-          submitLoaderRotation = 22 * eased;
-          setSubmitArrowGroup(submitLoaderRotation, 1 - .04 * eased);
-        } else {
-          setSubmitArrowGroup(submitLoaderRotation * (1 - eased), 1);
-        }
+        setSubmitArrowTransform(
+          submitLerp(from.x, to.x, t),
+          submitLerp(from.y, to.y, t),
+          submitLerp(from.rotation, to.rotation, t),
+          submitLerp(from.scale, to.scale, t)
+        );
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -148,73 +106,104 @@
     });
   }
 
-  function startSubmitCircularArrow() {
-    if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
+  function tangentRotation(angle) {
+    // Clockwise motion: the arrow points along the tangent of the circle.
+    return -(angle * 180 / Math.PI);
+  }
+
+  function startSubmitOrbit() {
+    if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
+
     submitLoaderLastFrame = performance.now();
 
     const frame = now => {
-      if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
+      if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
 
       const delta = Math.min(.034, Math.max(0, (now - submitLoaderLastFrame) / 1000));
       submitLoaderLastFrame = now;
 
-      const radians = submitLoaderRotation * Math.PI / 180;
-      const baseSpeed = 235;
-      const speedFactor = 1 + .20 * Math.sin(radians + .7);
-      submitLoaderRotation += baseSpeed * speedFactor * delta;
+      // Continuous circular motion with a gentle, fluid acceleration/deceleration.
+      const baseSpeed = SUBMIT_TAU / 1.55;
+      const speedFactor = 1 + .16 * Math.sin(submitLoaderAngle + .45);
+      submitLoaderAngle -= baseSpeed * speedFactor * delta;
 
-      setSubmitArrowGroup(submitLoaderRotation, .96);
+      const [x, y] = submitCirclePoint(submitLoaderAngle);
+      setSubmitArrowTransform(x, y, tangentRotation(submitLoaderAngle), .78);
+
       submitLoaderRaf = requestAnimationFrame(frame);
     };
 
     submitLoaderRaf = requestAnimationFrame(frame);
   }
 
-  async function enterSubmitCircularArrow() {
-    submitLoaderRotation = 0;
-    setSubmitArrowMorph(0);
-    setSubmitArrowGroup(0, 1);
+  async function enterSubmitOrbit() {
+    submitLoaderAngle = Math.PI / 2;
+    setSubmitArrowTransform(0, 0, 0, 1);
 
-    await animateSubmitMorph(0, 1, 520);
+    const [topX, topY] = submitCirclePoint(submitLoaderAngle);
 
-    if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
-    setSubmitArrowMorph(1);
-    setSubmitArrowGroup(submitLoaderRotation, .96);
-    startSubmitCircularArrow();
+    // The vector leaves the Y axis continuously and reaches y = +1.
+    await animateSubmitArrowState(
+      { x: 0, y: 0, rotation: 0, scale: 1 },
+      { x: topX, y: topY, rotation: 0, scale: .78 },
+      360
+    );
+
+    if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
+
+    // Blend into the tangent instead of snapping direction at the start of the lap.
+    await animateSubmitArrowState(
+      { x: topX, y: topY, rotation: 0, scale: .78 },
+      { x: topX, y: topY, rotation: tangentRotation(submitLoaderAngle), scale: .78 },
+      140,
+      submitEaseOut
+    );
+
+    if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
+
+    startSubmitOrbit();
   }
 
-  async function finishSubmitCircularArrow() {
+  async function finishSubmitOrbit() {
     cancelSubmitLoaderMotion();
-    if (!submitLoaderElement) return;
+    if (!submitLoaderArrow) return;
 
-    const startRotation = submitLoaderRotation;
-    let targetRotation = Math.ceil(startRotation / 360) * 360;
-    if (targetRotation - startRotation < 34) targetRotation += 360;
-    const distance = targetRotation - startRotation;
-    const duration = Math.max(260, Math.min(440, 220 + distance * .45));
+    const startAngle = submitLoaderAngle;
+    let targetAngle = -Math.PI / 2;
+
+    // Continue in the same clockwise direction until the next y = -1.
+    while (targetAngle >= startAngle - .02) targetAngle -= SUBMIT_TAU;
+
+    const distance = startAngle - targetAngle;
+    const duration = Math.max(260, Math.min(470, 220 + distance * 44));
 
     await new Promise(resolve => {
       const started = performance.now();
 
       const frame = now => {
-        if (!submitLoaderElement) {
+        if (!submitLoaderArrow) {
           resolve();
           return;
         }
 
         const raw = submitClamp((now - started) / duration);
-        let progress;
-        if (raw < .72) {
-          const local = raw / .72;
-          progress = .82 * local * local;
-        } else {
-          const local = (raw - .72) / .28;
-          progress = .82 + .18 * (1 - Math.pow(1 - local, 3));
-        }
 
-        submitLoaderRotation = startRotation + distance * progress;
-        const scale = .96 + .13 * Math.sin(Math.PI * raw);
-        setSubmitArrowGroup(submitLoaderRotation, scale);
+        // Accelerate into the final sweep, then land smoothly at y = -1.
+        const progress = raw < .72
+          ? .84 * Math.pow(raw / .72, 1.7)
+          : .84 + .16 * submitEaseOut((raw - .72) / .28);
+
+        submitLoaderAngle = startAngle - distance * progress;
+
+        const [x, y] = submitCirclePoint(submitLoaderAngle);
+        const scale = .78 + .09 * Math.sin(Math.PI * raw);
+
+        setSubmitArrowTransform(
+          x,
+          y,
+          tangentRotation(submitLoaderAngle),
+          scale
+        );
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -223,17 +212,31 @@
       submitLoaderRaf = requestAnimationFrame(frame);
     });
 
-    if (!submitLoaderElement) return;
+    if (!submitLoaderArrow) return;
 
-    submitLoaderRotation = targetRotation;
-    setSubmitArrowGroup(submitLoaderRotation, .96);
+    const [, bottomY] = submitCirclePoint(-Math.PI / 2);
+    const bottomRotation = tangentRotation(-Math.PI / 2);
 
-    // Once the circular arrow completes the fast final lap, straighten the
-    // ring back into the original upward arrow.
-    await animateSubmitMorph(1, 0, 420);
-    submitLoaderRotation = 0;
-    setSubmitArrowMorph(0);
-    setSubmitArrowGroup(0, 1);
+    // At y = -1, turn upward and then climb the Y axis continuously
+    // until the original vector is restored.
+    await animateSubmitArrowState(
+      { x: 0, y: bottomY, rotation: bottomRotation, scale: .78 },
+      { x: 0, y: bottomY, rotation: 0, scale: .84 },
+      130,
+      submitEaseOut
+    );
+
+    if (!submitLoaderArrow) return;
+
+    await animateSubmitArrowState(
+      { x: 0, y: bottomY, rotation: 0, scale: .84 },
+      { x: 0, y: 0, rotation: 0, scale: 1 },
+      350,
+      submitEase
+    );
+
+    submitLoaderAngle = Math.PI / 2;
+    setSubmitArrowTransform(0, 0, 0, 1);
   }
 
   async function setSubmitLoading(loading, instant = false) {
@@ -244,42 +247,41 @@
       submit.classList.remove('is-returning');
       submit.classList.add('is-loading');
 
-      const svg = document.createElementNS(SUBMIT_SVG_NS, 'svg');
-      svg.setAttribute('class', 'submit-circular-arrow');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'submit-arrow-orbit');
       svg.setAttribute('viewBox', '0 0 24 24');
       svg.setAttribute('aria-hidden', 'true');
 
-      const group = document.createElementNS(SUBMIT_SVG_NS, 'g');
-      const shaft = document.createElementNS(SUBMIT_SVG_NS, 'path');
-      const head = document.createElementNS(SUBMIT_SVG_NS, 'path');
+      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      arrow.setAttribute('class', 'submit-arrow-runner-svg');
 
-      shaft.setAttribute('class', 'submit-circular-arrow-shaft');
-      head.setAttribute('class', 'submit-circular-arrow-head');
-      group.append(shaft, head);
-      svg.append(group);
+      const shaft = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      shaft.setAttribute('d', 'M12 18 L12 6');
+      shaft.setAttribute('class', 'submit-arrow-shaft');
 
+      const head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      head.setAttribute('d', 'M8.5 9.5 L12 6 L15.5 9.5');
+      head.setAttribute('class', 'submit-arrow-head');
+
+      arrow.append(shaft, head);
+      svg.append(arrow);
       submit.replaceChildren(svg);
+
       submitLoaderElement = svg;
-      submitLoaderGroup = group;
-      submitLoaderShaft = shaft;
-      submitLoaderHead = head;
+      submitLoaderArrow = arrow;
 
-      setSubmitArrowMorph(0);
-      setSubmitArrowGroup(0, 1);
-
-      submitLoaderEntryPromise = enterSubmitCircularArrow();
+      setSubmitArrowTransform(0, 0, 0, 1);
+      submitLoaderEntryPromise = enterSubmitOrbit();
       return;
     }
 
     submit.classList.remove('is-loading');
     submit.classList.add('is-returning');
 
-    if (!submitLoaderElement || instant) {
+    if (!submitLoaderElement || !submitLoaderArrow || instant) {
       cancelSubmitLoaderMotion();
       submitLoaderElement = null;
-      submitLoaderGroup = null;
-      submitLoaderShaft = null;
-      submitLoaderHead = null;
+      submitLoaderArrow = null;
       submitLoaderEntryPromise = null;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
@@ -291,14 +293,12 @@
       submitLoaderEntryPromise = null;
     }
 
-    await finishSubmitCircularArrow();
+    await finishSubmitOrbit();
 
     if (submitLoaderElement && !submit.classList.contains('is-loading')) {
       cancelSubmitLoaderMotion();
       submitLoaderElement = null;
-      submitLoaderGroup = null;
-      submitLoaderShaft = null;
-      submitLoaderHead = null;
+      submitLoaderArrow = null;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
     }

@@ -37,13 +37,17 @@
 
   let submitLoaderRaf = 0;
   let submitLoaderElement = null;
-  let submitLoaderArrow = null;
-  let submitLoaderAngle = Math.PI / 2;
+  let submitLoaderGroup = null;
+  let submitLoaderShaft = null;
+  let submitLoaderHead = null;
+  let submitLoaderDistance = 0;
   let submitLoaderLastFrame = 0;
-  let submitLoaderEntryPromise = null;
 
   const SUBMIT_TAU = Math.PI * 2;
-  const SUBMIT_RADIUS = 6.8;
+  const SUBMIT_RADIUS = 7;
+  const SUBMIT_ARROW_LENGTH = SUBMIT_RADIUS * 2;
+  const SUBMIT_CIRCUMFERENCE = SUBMIT_TAU * SUBMIT_RADIUS;
+  const SUBMIT_SAMPLES = 24;
 
   const submitClamp = value => Math.max(0, Math.min(1, value));
   const submitEase = value => {
@@ -54,156 +58,171 @@
     const t = submitClamp(value);
     return 1 - Math.pow(1 - t, 3);
   };
-  const submitLerp = (a, b, t) => a + (b - a) * t;
-
-  function submitCirclePoint(angle) {
-    return [
-      Math.cos(angle) * SUBMIT_RADIUS,
-      -Math.sin(angle) * SUBMIT_RADIUS
-    ];
-  }
-
-  function setSubmitArrowTransform(x, y, rotation = 0, scale = 1) {
-    if (!submitLoaderArrow) return;
-    submitLoaderArrow.setAttribute(
-      'transform',
-      `translate(${(12 + x).toFixed(2)} ${(12 + y).toFixed(2)}) rotate(${rotation.toFixed(2)}) scale(${scale.toFixed(3)}) translate(-12 -12)`
-    );
-  }
 
   function cancelSubmitLoaderMotion() {
     cancelAnimationFrame(submitLoaderRaf);
     submitLoaderRaf = 0;
   }
 
-  function animateSubmitArrowState(from, to, duration, easing = submitEase) {
-    cancelSubmitLoaderMotion();
+  function submitOrbitPoint(distance) {
+    if (distance <= SUBMIT_ARROW_LENGTH) {
+      return [0, SUBMIT_RADIUS - distance];
+    }
 
-    return new Promise(resolve => {
-      const started = performance.now();
-
-      const frame = now => {
-        if (!submitLoaderArrow) {
-          resolve();
-          return;
-        }
-
-        const raw = submitClamp((now - started) / duration);
-        const t = easing(raw);
-
-        setSubmitArrowTransform(
-          submitLerp(from.x, to.x, t),
-          submitLerp(from.y, to.y, t),
-          submitLerp(from.rotation, to.rotation, t),
-          submitLerp(from.scale, to.scale, t)
-        );
-
-        if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
-        else resolve();
-      };
-
-      submitLoaderRaf = requestAnimationFrame(frame);
-    });
+    const arc = distance - SUBMIT_ARROW_LENGTH;
+    const angle = -Math.PI / 2 + arc / SUBMIT_RADIUS;
+    return [
+      Math.cos(angle) * SUBMIT_RADIUS,
+      Math.sin(angle) * SUBMIT_RADIUS
+    ];
   }
 
-  function tangentRotation(angle) {
-    // Clockwise motion: the arrow points along the tangent of the circle.
-    return -(angle * 180 / Math.PI);
+  function submitFinishPoint(distance) {
+    if (distance <= 0) {
+      const angle = Math.PI / 2 + distance / SUBMIT_RADIUS;
+      return [
+        Math.cos(angle) * SUBMIT_RADIUS,
+        Math.sin(angle) * SUBMIT_RADIUS
+      ];
+    }
+
+    return [0, SUBMIT_RADIUS - Math.min(distance, SUBMIT_ARROW_LENGTH)];
   }
 
-  function startSubmitOrbit() {
-    if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
+  function submitSmoothPath(points) {
+    if (!points.length) return '';
+    if (points.length === 1) return `M ${points[0][0]} ${points[0][1]}`;
+
+    let d = `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i - 1] || points[i];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[i + 2] || p2;
+
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+
+      d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+    }
+
+    return d;
+  }
+
+  function renderSubmitSnake(pointAt, headDistance, scale = 1) {
+    if (!submitLoaderShaft || !submitLoaderHead) return;
+
+    const points = [];
+    const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
+
+    for (let i = 0; i < SUBMIT_SAMPLES; i++) {
+      const t = i / (SUBMIT_SAMPLES - 1);
+      const distance = tailDistance + SUBMIT_ARROW_LENGTH * t;
+      const [x, y] = pointAt(distance);
+      points.push([12 + x, 12 + y]);
+    }
+
+    submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
+
+    const tip = points[points.length - 1];
+    const previous = points[points.length - 2];
+    let dx = tip[0] - previous[0];
+    let dy = tip[1] - previous[1];
+    const length = Math.hypot(dx, dy) || 1;
+    dx /= length;
+    dy /= length;
+
+    const back = 3.2;
+    const wing = 2.15;
+    const px = -dy;
+    const py = dx;
+
+    const left = [
+      tip[0] - dx * back + px * wing,
+      tip[1] - dy * back + py * wing
+    ];
+    const right = [
+      tip[0] - dx * back - px * wing,
+      tip[1] - dy * back - py * wing
+    ];
+
+    submitLoaderHead.setAttribute(
+      'd',
+      `M ${left[0].toFixed(2)} ${left[1].toFixed(2)} L ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} L ${right[0].toFixed(2)} ${right[1].toFixed(2)}`
+    );
+
+    if (submitLoaderGroup) {
+      submitLoaderGroup.setAttribute(
+        'transform',
+        `translate(12 12) scale(${scale.toFixed(3)}) translate(-12 -12)`
+      );
+    }
+  }
+
+  function currentSubmitAngle() {
+    const arc = Math.max(0, submitLoaderDistance - SUBMIT_ARROW_LENGTH);
+    return -Math.PI / 2 + arc / SUBMIT_RADIUS;
+  }
+
+  function startSubmitSnakeOrbit() {
+    if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
 
     submitLoaderLastFrame = performance.now();
+    const baseSpeed = SUBMIT_CIRCUMFERENCE / 1.55;
 
     const frame = now => {
-      if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
+      if (!submit.classList.contains('is-loading') || !submitLoaderElement) return;
 
       const delta = Math.min(.034, Math.max(0, (now - submitLoaderLastFrame) / 1000));
       submitLoaderLastFrame = now;
 
-      // Continuous circular motion with a gentle, fluid acceleration/deceleration.
-      const baseSpeed = SUBMIT_TAU / 1.55;
-      const speedFactor = 1 + .16 * Math.sin(submitLoaderAngle + .45);
-      submitLoaderAngle -= baseSpeed * speedFactor * delta;
+      const angle = currentSubmitAngle();
+      const speedFactor = 1 + .14 * Math.sin(angle + .45);
+      submitLoaderDistance += baseSpeed * speedFactor * delta;
 
-      const [x, y] = submitCirclePoint(submitLoaderAngle);
-      setSubmitArrowTransform(x, y, tangentRotation(submitLoaderAngle), .78);
-
+      renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
       submitLoaderRaf = requestAnimationFrame(frame);
     };
 
     submitLoaderRaf = requestAnimationFrame(frame);
   }
 
-  async function enterSubmitOrbit() {
-    submitLoaderAngle = Math.PI / 2;
-    setSubmitArrowTransform(0, 0, 0, 1);
-
-    const [topX, topY] = submitCirclePoint(submitLoaderAngle);
-
-    // The vector leaves the Y axis continuously and reaches y = +1.
-    await animateSubmitArrowState(
-      { x: 0, y: 0, rotation: 0, scale: 1 },
-      { x: topX, y: topY, rotation: 0, scale: .78 },
-      360
-    );
-
-    if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
-
-    // Blend into the tangent instead of snapping direction at the start of the lap.
-    await animateSubmitArrowState(
-      { x: topX, y: topY, rotation: 0, scale: .78 },
-      { x: topX, y: topY, rotation: tangentRotation(submitLoaderAngle), scale: .78 },
-      140,
-      submitEaseOut
-    );
-
-    if (!submit.classList.contains('is-loading') || !submitLoaderArrow) return;
-
-    startSubmitOrbit();
-  }
-
-  async function finishSubmitOrbit() {
+  async function finishSubmitSnake() {
     cancelSubmitLoaderMotion();
-    if (!submitLoaderArrow) return;
+    if (!submitLoaderElement) return;
 
-    const startAngle = submitLoaderAngle;
-    let targetAngle = -Math.PI / 2;
+    const currentArc = Math.max(0, submitLoaderDistance - SUBMIT_ARROW_LENGTH);
+    let targetArc = Math.PI * SUBMIT_RADIUS +
+      Math.ceil((currentArc - Math.PI * SUBMIT_RADIUS) / SUBMIT_CIRCUMFERENCE) * SUBMIT_CIRCUMFERENCE;
 
-    // Continue in the same clockwise direction until the next y = -1.
-    while (targetAngle >= startAngle - .02) targetAngle -= SUBMIT_TAU;
+    if (targetArc <= currentArc + .35) targetArc += SUBMIT_CIRCUMFERENCE;
 
-    const distance = startAngle - targetAngle;
-    const duration = Math.max(260, Math.min(470, 220 + distance * 44));
+    const startDistance = submitLoaderDistance;
+    const targetDistance = SUBMIT_ARROW_LENGTH + targetArc;
+    const travel = targetDistance - startDistance;
+    const duration = Math.max(250, Math.min(470, 230 + travel * 9));
 
     await new Promise(resolve => {
       const started = performance.now();
 
       const frame = now => {
-        if (!submitLoaderArrow) {
+        if (!submitLoaderElement) {
           resolve();
           return;
         }
 
         const raw = submitClamp((now - started) / duration);
-
-        // Accelerate into the final sweep, then land smoothly at y = -1.
         const progress = raw < .72
-          ? .84 * Math.pow(raw / .72, 1.7)
-          : .84 + .16 * submitEaseOut((raw - .72) / .28);
+          ? .82 * Math.pow(raw / .72, 1.55)
+          : .82 + .18 * submitEaseOut((raw - .72) / .28);
 
-        submitLoaderAngle = startAngle - distance * progress;
+        submitLoaderDistance = startDistance + travel * progress;
+        const scale = 1 + .085 * Math.sin(Math.PI * raw);
 
-        const [x, y] = submitCirclePoint(submitLoaderAngle);
-        const scale = .78 + .09 * Math.sin(Math.PI * raw);
-
-        setSubmitArrowTransform(
-          x,
-          y,
-          tangentRotation(submitLoaderAngle),
-          scale
-        );
+        renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, scale);
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -212,31 +231,38 @@
       submitLoaderRaf = requestAnimationFrame(frame);
     });
 
-    if (!submitLoaderArrow) return;
+    if (!submitLoaderElement) return;
 
-    const [, bottomY] = submitCirclePoint(-Math.PI / 2);
-    const bottomRotation = tangentRotation(-Math.PI / 2);
+    submitLoaderDistance = targetDistance;
+    renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
 
-    // At y = -1, turn upward and then climb the Y axis continuously
-    // until the original vector is restored.
-    await animateSubmitArrowState(
-      { x: 0, y: bottomY, rotation: bottomRotation, scale: .78 },
-      { x: 0, y: bottomY, rotation: 0, scale: .84 },
-      130,
-      submitEaseOut
-    );
+    // The head is now at y = -1 (the visual bottom). From this exact point it
+    // climbs the Y axis while the curved body follows behind like a snake.
+    await new Promise(resolve => {
+      const started = performance.now();
+      const duration = 390;
 
-    if (!submitLoaderArrow) return;
+      const frame = now => {
+        if (!submitLoaderElement) {
+          resolve();
+          return;
+        }
 
-    await animateSubmitArrowState(
-      { x: 0, y: bottomY, rotation: 0, scale: .84 },
-      { x: 0, y: 0, rotation: 0, scale: 1 },
-      350,
-      submitEase
-    );
+        const raw = submitClamp((now - started) / duration);
+        const progress = submitEase(raw) * SUBMIT_ARROW_LENGTH;
 
-    submitLoaderAngle = Math.PI / 2;
-    setSubmitArrowTransform(0, 0, 0, 1);
+        renderSubmitSnake(submitFinishPoint, progress, 1);
+
+        if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
+        else resolve();
+      };
+
+      submitLoaderRaf = requestAnimationFrame(frame);
+    });
+
+    if (!submitLoaderElement) return;
+
+    renderSubmitSnake(submitFinishPoint, SUBMIT_ARROW_LENGTH, 1);
   }
 
   async function setSubmitLoading(loading, instant = false) {
@@ -248,57 +274,58 @@
       submit.classList.add('is-loading');
 
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('class', 'submit-arrow-orbit');
+      svg.setAttribute('class', 'submit-snake-loader');
       svg.setAttribute('viewBox', '0 0 24 24');
       svg.setAttribute('aria-hidden', 'true');
 
-      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      arrow.setAttribute('class', 'submit-arrow-runner-svg');
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      group.setAttribute('class', 'submit-snake-group');
 
       const shaft = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      shaft.setAttribute('d', 'M12 18 L12 6');
-      shaft.setAttribute('class', 'submit-arrow-shaft');
+      shaft.setAttribute('class', 'submit-snake-shaft');
 
       const head = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      head.setAttribute('d', 'M8.5 9.5 L12 6 L15.5 9.5');
-      head.setAttribute('class', 'submit-arrow-head');
+      head.setAttribute('class', 'submit-snake-head');
 
-      arrow.append(shaft, head);
-      svg.append(arrow);
+      group.append(shaft, head);
+      svg.append(group);
       submit.replaceChildren(svg);
 
       submitLoaderElement = svg;
-      submitLoaderArrow = arrow;
+      submitLoaderGroup = group;
+      submitLoaderShaft = shaft;
+      submitLoaderHead = head;
+      submitLoaderDistance = SUBMIT_ARROW_LENGTH;
 
-      setSubmitArrowTransform(0, 0, 0, 1);
-      submitLoaderEntryPromise = enterSubmitOrbit();
+      // At distance = 2R the body occupies the complete Y-axis diameter:
+      // exactly the original upward arrow. The next frame bends only the tip.
+      renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
+      startSubmitSnakeOrbit();
       return;
     }
 
     submit.classList.remove('is-loading');
     submit.classList.add('is-returning');
 
-    if (!submitLoaderElement || !submitLoaderArrow || instant) {
+    if (!submitLoaderElement || instant) {
       cancelSubmitLoaderMotion();
       submitLoaderElement = null;
-      submitLoaderArrow = null;
-      submitLoaderEntryPromise = null;
+      submitLoaderGroup = null;
+      submitLoaderShaft = null;
+      submitLoaderHead = null;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
       return;
     }
 
-    if (submitLoaderEntryPromise) {
-      try { await submitLoaderEntryPromise; } catch (_) {}
-      submitLoaderEntryPromise = null;
-    }
-
-    await finishSubmitOrbit();
+    await finishSubmitSnake();
 
     if (submitLoaderElement && !submit.classList.contains('is-loading')) {
       cancelSubmitLoaderMotion();
       submitLoaderElement = null;
-      submitLoaderArrow = null;
+      submitLoaderGroup = null;
+      submitLoaderShaft = null;
+      submitLoaderHead = null;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
     }

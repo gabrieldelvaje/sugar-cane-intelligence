@@ -148,14 +148,18 @@
   will-change: transform;
 }
 
-.submit-snake-shaft,
-.submit-snake-head {
+.submit-snake-shaft {
   fill: none;
   stroke: currentColor;
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
+}
+
+.submit-snake-head {
+  fill: currentColor;
+  stroke: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

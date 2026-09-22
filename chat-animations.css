@@ -114,16 +114,16 @@
   box-shadow: none;
 }
 
-
-.page-shell,
-.page-shell.chat-started {
-  padding-bottom: 176px;
-}
+/* Leave a small, consistent gap above the fixed composer after a reply. */
+.page-shell { padding-bottom: 176px; }
+.page-shell.chat-started { padding-bottom: 104px; }
 
 @media (max-width: 650px) {
-  .page-shell,
-  .page-shell.chat-started {
+  .page-shell {
     padding-bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+  }
+  .page-shell.chat-started {
+    padding-bottom: calc(98px + env(safe-area-inset-bottom, 0px));
   }
 }
 

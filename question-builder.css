@@ -51,8 +51,15 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translate(-50%, 18px) scaleX(.12) scaleY(.08);
-  transform-origin: 50% 100%;
+  --qb-origin-x: 50%;
+  --qb-collapsed-scale-x: .08;
+  --qb-collapsed-scale-y: .08;
+  --qb-collapsed-offset-y: 18px;
+  transform:
+    translate(-50%, var(--qb-collapsed-offset-y))
+    scaleX(var(--qb-collapsed-scale-x))
+    scaleY(var(--qb-collapsed-scale-y));
+  transform-origin: var(--qb-origin-x) 100%;
   will-change: transform, opacity;
 }
 .question-builder-open .question-builder-panel {
@@ -62,20 +69,26 @@
   transform: translate(-50%, 0) scaleX(1) scaleY(1);
 }
 .question-builder-panel.qb-panel-opening {
-  animation: qb-panel-open-two-stage 440ms cubic-bezier(.22,1,.36,1) both;
+  animation: qb-panel-open-two-stage 470ms cubic-bezier(.22,1,.36,1) both;
 }
 .question-builder-panel.qb-panel-closing {
   pointer-events: none;
-  animation: qb-panel-close-two-stage 400ms cubic-bezier(.4,0,.2,1) both;
+  animation: qb-panel-close-two-stage 430ms cubic-bezier(.4,0,.2,1) both;
 }
 @keyframes qb-panel-open-two-stage {
   0% {
     opacity: 0;
-    transform: translate(-50%, 18px) scaleX(.12) scaleY(.08);
+    transform:
+      translate(-50%, var(--qb-collapsed-offset-y))
+      scaleX(var(--qb-collapsed-scale-x))
+      scaleY(var(--qb-collapsed-scale-y));
   }
-  48% {
+  50% {
     opacity: 1;
-    transform: translate(-50%, 0) scaleX(.12) scaleY(1);
+    transform:
+      translate(-50%, 0)
+      scaleX(var(--qb-collapsed-scale-x))
+      scaleY(1);
   }
   100% {
     opacity: 1;
@@ -87,13 +100,19 @@
     opacity: 1;
     transform: translate(-50%, 0) scaleX(1) scaleY(1);
   }
-  52% {
+  50% {
     opacity: 1;
-    transform: translate(-50%, 0) scaleX(.12) scaleY(1);
+    transform:
+      translate(-50%, 0)
+      scaleX(var(--qb-collapsed-scale-x))
+      scaleY(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, 18px) scaleX(.12) scaleY(.08);
+    transform:
+      translate(-50%, var(--qb-collapsed-offset-y))
+      scaleX(var(--qb-collapsed-scale-x))
+      scaleY(var(--qb-collapsed-scale-y));
   }
 }
 .question-builder-panel [hidden] { display: none !important; }

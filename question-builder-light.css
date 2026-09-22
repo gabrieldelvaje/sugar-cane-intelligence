@@ -1,0 +1,57 @@
+/* Neutral, softly layered builder surfaces in light mode only.
+   Scoped to the builder so the dark theme, chat and slide motion are unchanged. */
+:root:not([data-theme="dark"]) .question-builder-panel {
+  --qb-light-panel: #e4e8ed;
+  --qb-light-card: #edf0f4;
+  --qb-light-hover: #dce3eb;
+  --qb-light-border: #cbd3dd;
+  background: var(--qb-light-panel);
+  border-color: var(--qb-light-border);
+  box-shadow: none;
+}
+
+:root:not([data-theme="dark"]) .question-builder-panel :is(
+  .qb-heading,
+  .qb-wizard,
+  .qb-wizard-progress,
+  .qb-wizard-view,
+  .qb-wizard-nav,
+  .qb-footer
+) {
+  background-color: var(--qb-light-panel);
+}
+
+:root:not([data-theme="dark"]) .question-builder-panel :is(
+  .qb-close,
+  .qb-action:not([aria-pressed="true"]),
+  .qb-wizard-choice,
+  .qb-wizard-city input,
+  .qb-wizard-field select,
+  .qb-wizard-summary,
+  .qb-wizard-nav button:not(.qb-wizard-next),
+  .qb-field input,
+  .qb-field select,
+  .qb-city-results
+) {
+  background-color: var(--qb-light-card);
+  border-color: var(--qb-light-border);
+}
+
+:root:not([data-theme="dark"]) .question-builder-panel :is(
+  .qb-wizard-choice:hover,
+  .qb-wizard-choice[aria-pressed="true"],
+  .qb-action:not([aria-pressed="true"]):hover,
+  .qb-wizard-nav button:not(.qb-wizard-next):hover,
+  .qb-city-results button:hover,
+  .qb-wizard-results button:hover
+) {
+  background-color: var(--qb-light-hover);
+}
+
+:root:not([data-theme="dark"]) .question-builder-panel :is(
+  .qb-heading,
+  .qb-wizard-nav,
+  .qb-footer
+) {
+  border-color: var(--qb-light-border);
+}

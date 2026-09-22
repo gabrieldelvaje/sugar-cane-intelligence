@@ -1,0 +1,18 @@
+/* Dark-mode floating surfaces: remove the green-tinted shadows cast by
+   color-mix(... var(--text) ...). Keep panel borders, focus outlines and
+   the existing slide / tooltip positioning and animations unchanged. */
+[data-theme="dark"] :is(
+  .question-builder-panel,
+  .sci-language-menu,
+  .qb-city-results,
+  .historical-chart-tooltip,
+  [role="tooltip"]
+) {
+  box-shadow: none !important;
+  filter: none;
+}
+
+/* The question builder's screen overlay must not tint the surroundings green. */
+[data-theme="dark"] .question-builder-backdrop:not([hidden]) {
+  background: rgba(0, 0, 0, 0.12);
+}

@@ -54,7 +54,9 @@
       if (!nameStates.has(normalized)) nameStates.set(normalized, new Set());
       nameStates.get(normalized).add(uf);
       for (const [metric] of metrics) {
-        if (!Number.isFinite(row[metric])) continue;
+        // Suggestions must point to a real positive observation. This avoids
+        // generated questions whose answer is 0 (for example, area = 0 ha).
+        if (!Number.isFinite(row[metric]) || row[metric] <= 0) continue;
         const id = key(metric, year, uf);
         if (!index.has(id)) index.set(id, new Set());
         index.get(id).add(name);

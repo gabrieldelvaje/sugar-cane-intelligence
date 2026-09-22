@@ -34,3 +34,9 @@
 [data-theme="dark"] .question-bar button[type="submit"] {
   color: #102618;
 }
+/* Align every table heading and value to the center of its own column. */
+.data-table th,
+.data-table td,
+.data-table td.number {
+  text-align: center;
+}

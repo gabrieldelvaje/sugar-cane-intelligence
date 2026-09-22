@@ -294,8 +294,16 @@
 
       if (reducedMotion) finishOpen();
       else {
-        panel.addEventListener('animationend', finishOpen, { once: true });
-        setTimeout(finishOpen, 520);
+        const onOpenAnimationEnd = event => {
+          if (event.target !== panel || event.animationName !== 'qb-panel-open-two-stage') return;
+          panel.removeEventListener('animationend', onOpenAnimationEnd);
+          finishOpen();
+        };
+        panel.addEventListener('animationend', onOpenAnimationEnd);
+        setTimeout(() => {
+          panel.removeEventListener('animationend', onOpenAnimationEnd);
+          finishOpen();
+        }, 560);
       }
       return;
     }
@@ -320,8 +328,17 @@
     // Keep the panel mounted while it collapses X first, then Y.
     void panel.offsetWidth;
     panel.classList.add('qb-panel-closing');
-    panel.addEventListener('animationend', finishClose, { once: true });
-    setTimeout(finishClose, 520);
+
+    const onCloseAnimationEnd = event => {
+      if (event.target !== panel || event.animationName !== 'qb-panel-close-two-stage') return;
+      panel.removeEventListener('animationend', onCloseAnimationEnd);
+      finishClose();
+    };
+    panel.addEventListener('animationend', onCloseAnimationEnd);
+    setTimeout(() => {
+      panel.removeEventListener('animationend', onCloseAnimationEnd);
+      finishClose();
+    }, 540);
   }
   window.addEventListener('resize', () => {
     if (open) syncPanelAnimationOrigin();

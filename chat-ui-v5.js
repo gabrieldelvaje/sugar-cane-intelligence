@@ -115,78 +115,76 @@
   function renderSubmitSnake(pointAt, headDistance, scale = 1) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
 
-    // Exact proportions of the idle/final arrow:
-    // M8.5 8.5 L12 5 L15.5 8.5
-    const headBack = 3.5;
-    const headWing = 3.5;
-    const neckLength = 4.2;
-    const tangentProbe = .28;
-
-    const [tipX, tipY] = pointAt(headDistance);
-    const [probeX, probeY] = pointAt(headDistance - tangentProbe);
-
-    let ndx = tipX - probeX;
-    let ndy = tipY - probeY;
-    let nlen = Math.hypot(ndx, ndy) || 1;
-    ndx /= nlen;
-    ndy /= nlen;
-
+    const headSize = 3.5;
     const points = [];
     const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
 
+    // Keep the body on its real trajectory all the way to the tip. Do not
+    // straighten the final section: that was the visible "piece behind" the
+    // arrowhead in the circular part of the loader.
     for (let i = 0; i < SUBMIT_SAMPLES; i++) {
       const t = i / (SUBMIT_SAMPLES - 1);
       const distance = tailDistance + SUBMIT_ARROW_LENGTH * t;
-      const behindTip = headDistance - distance;
-
-      let x;
-      let y;
-
-      if (behindTip >= 0 && behindTip <= neckLength) {
-        // The last section of the shaft is forced to be straight. That gives
-        // the V the same relationship to the body as the original arrow and
-        // prevents either arm from folding over the curved shaft.
-        x = tipX - ndx * behindTip;
-        y = tipY - ndy * behindTip;
-      } else {
-        [x, y] = pointAt(distance);
-      }
-
+      const [x, y] = pointAt(distance);
       points.push([12 + x, 12 + y]);
     }
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
 
-    // Read the tangent from the FINAL rendered SVG path. This is the actual
-    // on-screen direction of the shaft after smoothing, so the V cannot lead
-    // or lag the curve.
-    let tip = { x: 12 + tipX, y: 12 + tipY };
-    let dx = ndx;
-    let dy = ndy;
+    let total = 0;
+    try { total = submitLoaderShaft.getTotalLength(); } catch (_) {}
+    if (total <= .4) return;
 
-    try {
-      const total = submitLoaderShaft.getTotalLength();
-      if (total > .4) {
-        tip = submitLoaderShaft.getPointAtLength(total);
-        const behind = submitLoaderShaft.getPointAtLength(Math.max(0, total - .32));
-        dx = tip.x - behind.x;
-        dy = tip.y - behind.y;
-        const length = Math.hypot(dx, dy) || 1;
-        dx /= length;
-        dy /= length;
-      }
-    } catch (_) {}
+    // Use the actual rendered tangent. The curved shaft itself becomes one
+    // side of the circular-arrow head, exactly like the reference icon.
+    const tip = submitLoaderShaft.getPointAtLength(total);
+    const behind = submitLoaderShaft.getPointAtLength(Math.max(0, total - .35));
+    let dx = tip.x - behind.x;
+    let dy = tip.y - behind.y;
+    const length = Math.hypot(dx, dy) || 1;
+    dx /= length;
+    dy /= length;
 
+    // For clockwise movement this perpendicular points toward the inside of
+    // the circle. One clean arm + the incoming shaft forms the arrowhead,
+    // avoiding the three-stroke/V overlap seen before.
     const px = -dy;
     const py = dx;
+    const hook = [
+      tip.x + px * headSize,
+      tip.y + py * headSize
+    ];
 
+    // Preserve the exact original V only while leaving/returning to the idle
+    // vertical arrow, then morph continuously into the circular hook.
+    let hookMix = 1;
+    if (pointAt === submitOrbitPoint) {
+      const arc = Math.max(0, headDistance - SUBMIT_ARROW_LENGTH);
+      hookMix = submitClamp(arc / 2.8);
+    } else if (pointAt === submitFinishPoint) {
+      hookMix = 1 - submitClamp(
+        (headDistance - (SUBMIT_ARROW_LENGTH - 2.8)) / 2.8
+      );
+    }
+
+    const backLeft = [
+      tip.x - dx * headSize + px * headSize,
+      tip.y - dy * headSize + py * headSize
+    ];
+    const backRight = [
+      tip.x - dx * headSize - px * headSize,
+      tip.y - dy * headSize - py * headSize
+    ];
+
+    // The p-side V arm slides into the 90-degree hook. The other arm collapses
+    // into the tip, so no extra stroke remains behind the head.
     const left = [
-      tip.x - dx * headBack + px * headWing,
-      tip.y - dy * headBack + py * headWing
+      backLeft[0] + (hook[0] - backLeft[0]) * hookMix,
+      backLeft[1] + (hook[1] - backLeft[1]) * hookMix
     ];
     const right = [
-      tip.x - dx * headBack - px * headWing,
-      tip.y - dy * headBack - py * headWing
+      backRight[0] + (tip.x - backRight[0]) * hookMix,
+      backRight[1] + (tip.y - backRight[1]) * hookMix
     ];
 
     submitLoaderHead.setAttribute(

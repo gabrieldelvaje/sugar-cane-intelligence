@@ -115,9 +115,10 @@
   function renderSubmitSnake(pointAt, headDistance, scale = 1) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
 
-    const headBack = 3.5;
-    const headWing = 3.5;
+    const headBack = 3.35;
+    const headWing = 3.35;
     const tangentProbe = .28;
+    const transitionRange = 3.8;
 
     const [tipX, tipY] = pointAt(headDistance);
     const [probeX, probeY] = pointAt(headDistance - tangentProbe);
@@ -132,47 +133,22 @@
     const py = dx;
     const tip = [12 + tipX, 12 + tipY];
 
-    // Circular-arrow geometry like U+21BA/U+21BB:
-    // one side of the head is the continuation of the shaft itself;
-    // the other side is the short inward arm. This avoids drawing a full V
-    // on top of the curved body.
-    const circularBase = [
-      tip[0] - dx * headBack,
-      tip[1] - dy * headBack
-    ];
-    const circularWing = [
-      tip[0] + px * headWing,
-      tip[1] + py * headWing
-    ];
-
-    // Exact idle/final V geometry, used only while entering/leaving the load.
-    const idleLeft = [
-      tip[0] - dx * headBack + px * headWing,
-      tip[1] - dy * headBack + py * headWing
-    ];
-    const idleRight = [
-      tip[0] - dx * headBack - px * headWing,
-      tip[1] - dy * headBack - py * headWing
-    ];
-
     let idleMix = 0;
     if (pointAt === submitOrbitPoint) {
       const arc = Math.max(0, headDistance - SUBMIT_ARROW_LENGTH);
-      idleMix = 1 - submitClamp(arc / 2.8);
+      idleMix = 1 - submitEase(submitClamp(arc / transitionRange));
     } else if (pointAt === submitFinishPoint) {
-      idleMix = submitClamp(
-        (headDistance - (SUBMIT_ARROW_LENGTH - 2.8)) / 2.8
+      idleMix = submitEase(
+        submitClamp((headDistance - (SUBMIT_ARROW_LENGTH - transitionRange)) / transitionRange)
       );
     }
 
-    // While orbiting, stop the body exactly at circularBase. As the loader
-    // returns to the idle arrow, progressively let the shaft reach the tip.
-    const trim = headBack * (1 - idleMix);
-    const bodyEndDistance = headDistance - trim;
-    const bodyLength = SUBMIT_ARROW_LENGTH - trim;
+    const bodyTrim = headBack * (1 - idleMix);
+    const bodyEndDistance = headDistance - bodyTrim;
+    const bodyLength = SUBMIT_ARROW_LENGTH - bodyTrim;
     const tailDistance = bodyEndDistance - bodyLength;
-    const points = [];
 
+    const points = [];
     for (let i = 0; i < SUBMIT_SAMPLES; i++) {
       const t = i / (SUBMIT_SAMPLES - 1);
       const distance = tailDistance + bodyLength * t;
@@ -182,7 +158,28 @@
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
 
-    // Morph between the integrated circular-arrow head and the exact idle V.
+    const [baseX, baseY] = pointAt(bodyEndDistance);
+    const circularBase = [12 + baseX, 12 + baseY];
+
+    // Circular-arrow arm: slightly behind the tip so it reads like a clean
+    // U+21BA-style arrowhead instead of a rigid right-angle hook.
+    const circularWing = [
+      tip[0] - dx * (headBack * .22) + px * headWing,
+      tip[1] - dy * (headBack * .22) + py * headWing
+    ];
+
+    // Exact idle/final V geometry.
+    const idleLeft = [
+      tip[0] - dx * headBack + px * headWing,
+      tip[1] - dy * headBack + py * headWing
+    ];
+    const idleRight = [
+      tip[0] - dx * headBack - px * headWing,
+      tip[1] - dy * headBack - py * headWing
+    ];
+
+    // Smoothly morph the circular presentation into the original V only at
+    // the beginning/end, so the head never pops into a different shape.
     const first = [
       circularBase[0] + (idleLeft[0] - circularBase[0]) * idleMix,
       circularBase[1] + (idleLeft[1] - circularBase[1]) * idleMix

@@ -133,46 +133,84 @@
   cursor: wait;
 }
 
-.lds-default,
-.lds-default i {
+.submit-morph,
+.submit-morph i {
   box-sizing: border-box;
 }
 
-.lds-default {
-  display: inline-block;
+.submit-morph {
   position: relative;
+  display: inline-block;
   width: 26px;
   height: 26px;
   color: currentColor;
 }
 
-.lds-default i {
+.submit-morph i {
   position: absolute;
-  width: 2.1px;
-  height: 2.1px;
-  background: currentColor;
+  width: 2.4px;
+  height: 2.4px;
   border-radius: 50%;
-  animation: lds-default 1.2s linear infinite;
+  background: currentColor;
+  left: var(--ax);
+  top: var(--ay);
+  transform: scale(1);
+  transition:
+    left 440ms cubic-bezier(.22,1,.36,1),
+    top 440ms cubic-bezier(.22,1,.36,1),
+    opacity 180ms ease;
 }
 
-.lds-default i:nth-child(1) { animation-delay: 0s; top: 11.96px; left: 21.53px; }
-.lds-default i:nth-child(2) { animation-delay: -.1s; top: 7.18px; left: 20.25px; }
-.lds-default i:nth-child(3) { animation-delay: -.2s; top: 3.67px; left: 16.74px; }
-.lds-default i:nth-child(4) { animation-delay: -.3s; top: 2.39px; left: 11.96px; }
-.lds-default i:nth-child(5) { animation-delay: -.4s; top: 3.67px; left: 7.18px; }
-.lds-default i:nth-child(6) { animation-delay: -.5s; top: 7.18px; left: 3.67px; }
-.lds-default i:nth-child(7) { animation-delay: -.6s; top: 11.96px; left: 2.39px; }
-.lds-default i:nth-child(8) { animation-delay: -.7s; top: 16.74px; left: 3.67px; }
-.lds-default i:nth-child(9) { animation-delay: -.8s; top: 20.25px; left: 7.18px; }
-.lds-default i:nth-child(10) { animation-delay: -.9s; top: 21.53px; left: 11.96px; }
-.lds-default i:nth-child(11) { animation-delay: -1s; top: 20.25px; left: 16.74px; }
-.lds-default i:nth-child(12) { animation-delay: -1.1s; top: 16.74px; left: 20.25px; }
+.submit-morph.is-entering i {
+  animation: submit-arrow-break 180ms ease both;
+}
 
-@keyframes lds-default {
-  0%, 20%, 80%, 100% { transform: scale(1); }
-  50% { transform: scale(1.5); }
+.submit-morph.is-circle i {
+  left: var(--cx);
+  top: var(--cy);
+  animation: submit-circle-pulse 1.2s linear infinite;
+  animation-delay: var(--delay);
+}
+
+.submit-morph.is-returning i {
+  animation: submit-arrow-return 460ms cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Arrow coordinates -> circle coordinates. */
+.submit-morph i:nth-child(1)  { --ax:11.8px; --ay:20.8px; --cx:21.4px; --cy:11.8px; --delay:0s; }
+.submit-morph i:nth-child(2)  { --ax:11.8px; --ay:17.8px; --cx:20.1px; --cy:7.2px; --delay:-.1s; }
+.submit-morph i:nth-child(3)  { --ax:11.8px; --ay:14.8px; --cx:16.7px; --cy:3.8px; --delay:-.2s; }
+.submit-morph i:nth-child(4)  { --ax:11.8px; --ay:11.8px; --cx:11.8px; --cy:2.5px; --delay:-.3s; }
+.submit-morph i:nth-child(5)  { --ax:11.8px; --ay:8.8px;  --cx:7.2px;  --cy:3.8px; --delay:-.4s; }
+.submit-morph i:nth-child(6)  { --ax:11.8px; --ay:5.8px;  --cx:3.8px;  --cy:7.2px; --delay:-.5s; }
+.submit-morph i:nth-child(7)  { --ax:9.3px;  --ay:8.3px;  --cx:2.5px;  --cy:11.8px; --delay:-.6s; }
+.submit-morph i:nth-child(8)  { --ax:6.8px;  --ay:10.8px; --cx:3.8px;  --cy:16.7px; --delay:-.7s; }
+.submit-morph i:nth-child(9)  { --ax:14.3px; --ay:8.3px;  --cx:7.2px;  --cy:20.1px; --delay:-.8s; }
+.submit-morph i:nth-child(10) { --ax:16.8px; --ay:10.8px; --cx:11.8px; --cy:21.4px; --delay:-.9s; }
+.submit-morph i:nth-child(11) { --ax:9.3px;  --ay:5.8px;  --cx:16.7px; --cy:20.1px; --delay:-1s; }
+.submit-morph i:nth-child(12) { --ax:14.3px; --ay:5.8px;  --cx:20.1px; --cy:16.7px; --delay:-1.1s; }
+
+@keyframes submit-arrow-break {
+  0% { transform: scale(1.35); opacity: .95; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes submit-circle-pulse {
+  0%, 20%, 80%, 100% { transform: scale(1); opacity: .72; }
+  50% { transform: scale(1.65); opacity: 1; }
+}
+
+@keyframes submit-arrow-return {
+  0% { transform: scale(1); opacity: .8; }
+  72% { transform: scale(1.22); opacity: 1; }
+  100% { transform: scale(1.1); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lds-default i { animation-duration: 1.8s; }
+  .submit-morph i {
+    transition-duration: 220ms;
+  }
+  .submit-morph.is-circle i {
+    animation-duration: 1.8s;
+  }
 }

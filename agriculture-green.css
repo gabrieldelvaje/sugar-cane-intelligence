@@ -1,12 +1,12 @@
-/* A paired neutral palette: light surfaces and dark charcoal surfaces.
+/* A paired neutral palette: soft-gray light surfaces and dark charcoal surfaces.
    Keep agricultural green for interactive accents in both themes. */
 :root {
   --bg: #f8f9fb;
-  --surface: #ffffff;
-  --surface2: #f0f2f5;
+  --surface: #f0f2f5;
+  --surface2: #e9edf2;
   --text: #1c222b;
   --muted: #69727d;
-  --line: #d9dee5;
+  --line: #d1d8e0;
   --brand: #277b46;
   --accent: #93bd68;
 }
@@ -22,8 +22,8 @@
 }
 /* The user bubble follows each theme's neutral surfaces, not a green tint. */
 .conversation .message.user .message-content {
-  background: #eef1f5;
-  border-color: #d7dde4;
+  background: #e8edf2;
+  border-color: #cfd7e0;
   color: #1c222b;
 }
 [data-theme="dark"] .conversation .message.user .message-content {

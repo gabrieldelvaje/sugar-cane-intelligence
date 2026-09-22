@@ -92,7 +92,6 @@
 
 /* Fully rounded composer; a single thicker outline on focus, no glow. */
 .question-bar {
-  isolation: isolate;
   border: 2px solid var(--line);
   border-radius: 999px;
   box-shadow: none;
@@ -116,17 +115,16 @@
 }
 
 
-/* Keep everything below the fixed composer opaque.
-   Attaching the shield to the composer avoids Safari viewport/toolbar differences. */
-.question-bar::after {
+/* Opaque safe area behind the fixed composer.
+   It begins a few pixels above the pill and uses the exact page background. */
+body::after {
   content: "";
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  z-index: -1;
-  width: 100vw;
-  height: calc(100vh + 6px);
-  transform: translateX(-50%);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 19;
+  height: 88px;
   background: var(--bg);
   pointer-events: none;
 }
@@ -137,6 +135,10 @@
 }
 
 @media (max-width: 650px) {
+  body::after {
+    height: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+
   .page-shell,
   .page-shell.chat-started {
     padding-bottom: calc(168px + env(safe-area-inset-bottom, 0px));

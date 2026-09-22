@@ -13,7 +13,13 @@
     const english = i18n.get() === 'en';
     const heading = group.querySelector('.follow-up-label');
     if (heading) {
-      if (!heading.dataset.originalPt) heading.dataset.originalPt = heading.textContent.trim();
+      if (!heading.dataset.originalPt) {
+        const current = heading.textContent.trim();
+        heading.dataset.originalPt = current === 'You can also ask'
+          ? 'Você também pode perguntar'
+          : current === 'Try a comparison with values greater than zero:'
+            ? 'Experimente uma comparação com valores maiores que zero:' : current;
+      }
       const original = heading.dataset.originalPt;
       const translated = original.startsWith('Experimente ')
         ? 'Try a comparison with values greater than zero:'
@@ -23,12 +29,13 @@
     }
     for (const button of group.querySelectorAll('button')) {
       if (!button.dataset.originalPt) {
-        const original = button.textContent.trim();
-        // The main interface layer may have translated this button already.
-        // Keep its Portuguese source when it was supplied by a generator.
-        button.dataset.originalPt = button.dataset.question &&
+        const original = button.dataset.question &&
           /^(?:Qual|Quais|Compare a)\b/i.test(button.dataset.question)
-          ? button.dataset.question : original;
+          ? button.dataset.question : button.textContent.trim();
+        // Another observer may have already translated the button. Recover a
+        // Portuguese question for switching back without changing the data.
+        button.dataset.originalPt = /^(?:Qual|Quais|Compare a)\b/i.test(original)
+          ? original : i18n.toPortugueseQuestion(original);
       }
       const original = button.dataset.originalPt;
       const expected = english ? i18n.toEnglishQuestion(original) : original;

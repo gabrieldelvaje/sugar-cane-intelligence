@@ -133,12 +133,12 @@
   cursor: wait;
 }
 
-.submit-loader-morph,
-.submit-loader-morph i {
+.submit-loader-orbit,
+.submit-loader-orbit * {
   box-sizing: border-box;
 }
 
-.submit-loader-morph {
+.submit-loader-orbit {
   position: relative;
   display: inline-block;
   width: 24px;
@@ -146,66 +146,32 @@
   color: currentColor;
 }
 
-.submit-loader-morph i {
+.submit-loader-arrow {
   position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  line-height: 1;
+  color: currentColor;
+  pointer-events: none;
+}
+
+.submit-loader-orbit i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   width: 3px;
   height: 3px;
   margin: -1.5px 0 0 -1.5px;
   border-radius: 50%;
   background: currentColor;
-  left: var(--ax);
-  top: var(--ay);
-  opacity: .96;
-  transform: scale(1);
-  transition:
-    left 520ms cubic-bezier(.22,1,.36,1),
-    top 520ms cubic-bezier(.22,1,.36,1),
-    opacity 220ms ease,
-    transform 220ms ease;
-  will-change: left, top, transform, opacity;
-}
-
-/* Six dots first draw a minimal upward arrow. */
-.submit-loader-morph i:nth-child(1) { --ax:12px; --ay:19px; --lx:12px; --ly:20px; --delay:0s; }
-.submit-loader-morph i:nth-child(2) { --ax:12px; --ay:15px; --lx:5px;  --ly:16px; --delay:-.18s; }
-.submit-loader-morph i:nth-child(3) { --ax:12px; --ay:11px; --lx:5px;  --ly:8px;  --delay:-.36s; }
-.submit-loader-morph i:nth-child(4) { --ax:8px;  --ay:10px; --lx:12px; --ly:4px;  --delay:-.54s; }
-.submit-loader-morph i:nth-child(5) { --ax:12px; --ay:6px;  --lx:19px; --ly:8px;  --delay:-.72s; }
-.submit-loader-morph i:nth-child(6) { --ax:16px; --ay:10px; --lx:19px; --ly:16px; --delay:-.90s; }
-
-/* They rise and spread into a six-point loader. */
-.submit-loader-morph.is-formed i {
-  left: var(--lx);
-  top: var(--ly);
-  animation: submit-loader-breathe 1.15s ease-in-out infinite;
-  animation-delay: var(--delay);
-}
-
-.submit-loader-morph.is-returning i {
-  animation: none;
-  transform: scale(.95);
-}
-
-@keyframes submit-loader-breathe {
-  0%, 100% {
-    transform: scale(.72);
-    opacity: .52;
-  }
-  42% {
-    transform: scale(1.35);
-    opacity: 1;
-  }
-  68% {
-    transform: scale(.95);
-    opacity: .78;
-  }
+  will-change: transform, opacity;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .submit-loader-morph i {
-    transition-duration: 260ms;
-  }
-  .submit-loader-morph.is-formed i {
-    animation-duration: 1.7s;
+  .submit-loader-orbit i {
+    will-change: auto;
   }
 }

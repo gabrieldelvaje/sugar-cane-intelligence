@@ -112,8 +112,58 @@
     return d;
   }
 
-  function renderSubmitSnake(pointAt, headDistance, scale = 1) {
+  function submitNormaliseDirection(dx, dy) {
+    const length = Math.hypot(dx, dy) || 1;
+    return [dx / length, dy / length];
+  }
+
+  function submitOrbitTangent(distance) {
+    if (distance <= SUBMIT_ARROW_LENGTH) return [0, -1];
+
+    const arc = distance - SUBMIT_ARROW_LENGTH;
+    const angle = -Math.PI / 2 + arc / SUBMIT_RADIUS;
+    const circle = [-Math.sin(angle), Math.cos(angle)];
+
+    // The tip leaves the vertical arrow as one continuous bend instead of
+    // instantly snapping 90 degrees into the circular tangent.
+    if (arc < 2.4) {
+      const t = submitEase(arc / 2.4);
+      return submitNormaliseDirection(
+        circle[0] * t,
+        -1 * (1 - t) + circle[1] * t
+      );
+    }
+
+    return circle;
+  }
+
+  function submitFinishTangent(distance) {
+    if (distance < 0) {
+      const angle = Math.PI / 2 + distance / SUBMIT_RADIUS;
+      return [-Math.sin(angle), Math.cos(angle)];
+    }
+
+    // At y = -1, smoothly turn the arrowhead upward before the climb.
+    if (distance < 2.4) {
+      const t = submitEase(distance / 2.4);
+      return submitNormaliseDirection(
+        -1 * (1 - t),
+        -1 * t
+      );
+    }
+
+    return [0, -1];
+  }
+
+  function renderSubmitSnake(pointAt, tangentAt, headDistance, scale = 1) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
+
+    // These are exactly the idle/final arrowhead proportions:
+    // M8.5 8.5 L12 5 L15.5 8.5.
+    const headBack = 3.5;
+    const headWing = 3.5;
+    const [tipX, tipY] = pointAt(headDistance);
+    const [dx, dy] = tangentAt(headDistance);
 
     const points = [];
     const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
@@ -121,35 +171,36 @@
     for (let i = 0; i < SUBMIT_SAMPLES; i++) {
       const t = i / (SUBMIT_SAMPLES - 1);
       const distance = tailDistance + SUBMIT_ARROW_LENGTH * t;
-      const [x, y] = pointAt(distance);
+      const behindTip = headDistance - distance;
+
+      let x;
+      let y;
+
+      if (behindTip >= 0 && behindTip < headBack) {
+        // Keep a short straight neck under the V. The rest of the body can
+        // curve freely, but it can no longer fold underneath either V arm.
+        x = tipX - dx * behindTip;
+        y = tipY - dy * behindTip;
+      } else {
+        [x, y] = pointAt(distance);
+      }
+
       points.push([12 + x, 12 + y]);
     }
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
 
-    // Get the tip direction from a short section of its actual path rather
-    // than the last sampling step, which made the small head wobble/deform.
-    const tip = points[points.length - 1];
-    const [behindX, behindY] = pointAt(headDistance - 1.3);
-    let dx = tip[0] - (12 + behindX);
-    let dy = tip[1] - (12 + behindY);
-    const length = Math.hypot(dx, dy) || 1;
-    dx /= length;
-    dy /= length;
-
-    // A larger, clearly defined chevron remains recognisable at every angle.
-    const back = 4.4;
-    const wing = 3.05;
+    const tip = [12 + tipX, 12 + tipY];
     const px = -dy;
     const py = dx;
 
     const left = [
-      tip[0] - dx * back + px * wing,
-      tip[1] - dy * back + py * wing
+      tip[0] - dx * headBack + px * headWing,
+      tip[1] - dy * headBack + py * headWing
     ];
     const right = [
-      tip[0] - dx * back - px * wing,
-      tip[1] - dy * back - py * wing
+      tip[0] - dx * headBack - px * headWing,
+      tip[1] - dy * headBack - py * headWing
     ];
 
     submitLoaderHead.setAttribute(
@@ -186,7 +237,7 @@
       const speedFactor = 1 + .14 * Math.sin(angle + .45);
       submitLoaderDistance += baseSpeed * speedFactor * delta;
 
-      renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
+      renderSubmitSnake(submitOrbitPoint, submitOrbitTangent, submitLoaderDistance, 1);
       submitLoaderRaf = requestAnimationFrame(frame);
     };
 
@@ -225,7 +276,7 @@
         submitLoaderDistance = startDistance + travel * progress;
         const scale = 1 + .085 * Math.sin(Math.PI * raw);
 
-        renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, scale);
+        renderSubmitSnake(submitOrbitPoint, submitOrbitTangent, submitLoaderDistance, scale);
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -237,7 +288,7 @@
     if (!submitLoaderElement) return;
 
     submitLoaderDistance = targetDistance;
-    renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
+    renderSubmitSnake(submitOrbitPoint, submitOrbitTangent, submitLoaderDistance, 1);
 
     // The head is now at y = -1 (the visual bottom). From this exact point it
     // climbs the Y axis while the curved body follows behind like a snake.
@@ -254,7 +305,7 @@
         const raw = submitClamp((now - started) / duration);
         const progress = submitEase(raw) * SUBMIT_ARROW_LENGTH;
 
-        renderSubmitSnake(submitFinishPoint, progress, 1);
+        renderSubmitSnake(submitFinishPoint, submitFinishTangent, progress, 1);
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -265,7 +316,7 @@
 
     if (!submitLoaderElement) return;
 
-    renderSubmitSnake(submitFinishPoint, SUBMIT_ARROW_LENGTH, 1);
+    renderSubmitSnake(submitFinishPoint, submitFinishTangent, SUBMIT_ARROW_LENGTH, 1);
   }
 
   async function setSubmitLoading(loading, instant = false) {
@@ -302,7 +353,7 @@
 
       // At distance = 2R the body occupies the complete Y-axis diameter:
       // exactly the original upward arrow. The next frame bends only the tip.
-      renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
+      renderSubmitSnake(submitOrbitPoint, submitOrbitTangent, submitLoaderDistance, 1);
       startSubmitSnakeOrbit();
       return;
     }

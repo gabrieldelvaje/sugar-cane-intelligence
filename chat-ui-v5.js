@@ -35,42 +35,20 @@
   // Animation is always on. Keep only the light/dark theme control in the header.
   const motionOn = true;
 
-  let submitMorphTimer = 0;
-
   function setSubmitLoading(loading) {
-    clearTimeout(submitMorphTimer);
+    submit.classList.toggle('is-loading', loading);
     submit.setAttribute('aria-label', loading ? 'Gerando resposta' : 'Enviar pergunta');
 
-    if (loading) {
-      submit.classList.add('is-loading');
-      const morph = document.createElement('span');
-      morph.className = 'submit-morph is-arrow is-entering';
-      morph.setAttribute('aria-hidden', 'true');
-      for (let i = 0; i < 12; i++) morph.append(document.createElement('i'));
-      submit.replaceChildren(morph);
-
-      submitMorphTimer = window.setTimeout(() => {
-        if (!submit.contains(morph)) return;
-        morph.classList.remove('is-entering', 'is-arrow');
-        morph.classList.add('is-circle');
-      }, 180);
-      return;
-    }
-
-    submit.classList.remove('is-loading');
-    const morph = submit.querySelector('.submit-morph');
-    if (!morph) {
+    if (!loading) {
       submit.textContent = '↑';
       return;
     }
 
-    morph.classList.remove('is-circle', 'is-entering');
-    morph.classList.add('is-arrow', 'is-returning');
-    submitMorphTimer = window.setTimeout(() => {
-      if (submit.contains(morph) && !submit.classList.contains('is-loading')) {
-        submit.textContent = '↑';
-      }
-    }, 500);
+    const loader = document.createElement('span');
+    loader.className = 'submit-loader';
+    loader.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 6; i++) loader.append(document.createElement('i'));
+    submit.replaceChildren(loader);
   }
 
   function bottom() {

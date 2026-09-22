@@ -83,6 +83,7 @@
     if (!chart) return html;
 
     tableWrap.insertAdjacentHTML('beforebegin', chart);
+    tableWrap.remove();
     return fragment.innerHTML;
   };
 })();

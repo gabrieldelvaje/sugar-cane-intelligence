@@ -102,9 +102,9 @@
       dots.forEach((dot, index) => {
         const angle = submitLoaderAngles[index];
 
-        // Slow strongly around the bottom of the circle so the dots bunch up,
-        // then accelerate continuously as they climb back toward the top.
-        const speedFactor = Math.max(.28, Math.min(1.9, 1.08 - .78 * Math.sin(angle)));
+        // Keep only a subtle slowdown at the bottom and a gentle acceleration
+        // on the way up, so the orbit stays fluid without bunching too much.
+        const speedFactor = Math.max(.76, Math.min(1.24, 1 - .24 * Math.sin(angle)));
         submitLoaderAngles[index] = angle + baseSpeed * speedFactor * delta;
 
         const point = circlePoint(submitLoaderAngles[index]);

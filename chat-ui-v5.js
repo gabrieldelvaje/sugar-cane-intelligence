@@ -115,13 +115,13 @@
   function renderSubmitSnake(pointAt, headDistance, scale = 1) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
 
-    const headSize = 3.5;
+    const headBack = 3.5;
+    const headWing = 3.5;
+    const tangentProbe = .32;
     const points = [];
     const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
 
-    // Keep the body on its real trajectory all the way to the tip. Do not
-    // straighten the final section: that was the visible "piece behind" the
-    // arrowhead in the circular part of the loader.
+    // Keep the snake body on its real path all the way to the tip.
     for (let i = 0; i < SUBMIT_SAMPLES; i++) {
       const t = i / (SUBMIT_SAMPLES - 1);
       const distance = tailDistance + SUBMIT_ARROW_LENGTH * t;
@@ -131,65 +131,35 @@
 
     submitLoaderShaft.setAttribute('d', submitSmoothPath(points));
 
-    let total = 0;
-    try { total = submitLoaderShaft.getTotalLength(); } catch (_) {}
-    if (total <= .4) return;
+    // Build the arrowhead from the local tangent of the actual trajectory.
+    // This gives the load arrow the same complete symmetric V as the idle
+    // arrow, without the extra straight segment that previously appeared
+    // behind the head.
+    const [tipX, tipY] = pointAt(headDistance);
+    const [behindX, behindY] = pointAt(headDistance - tangentProbe);
 
-    // Use the actual rendered tangent. The curved shaft itself becomes one
-    // side of the circular-arrow head, exactly like the reference icon.
-    const tip = submitLoaderShaft.getPointAtLength(total);
-    const behind = submitLoaderShaft.getPointAtLength(Math.max(0, total - .35));
-    let dx = tip.x - behind.x;
-    let dy = tip.y - behind.y;
+    let dx = tipX - behindX;
+    let dy = tipY - behindY;
     const length = Math.hypot(dx, dy) || 1;
     dx /= length;
     dy /= length;
 
-    // For clockwise movement this perpendicular points toward the inside of
-    // the circle. One clean arm + the incoming shaft forms the arrowhead,
-    // avoiding the three-stroke/V overlap seen before.
     const px = -dy;
     const py = dx;
-    const hook = [
-      tip.x + px * headSize,
-      tip.y + py * headSize
-    ];
+    const tip = [12 + tipX, 12 + tipY];
 
-    // Preserve the exact original V only while leaving/returning to the idle
-    // vertical arrow, then morph continuously into the circular hook.
-    let hookMix = 1;
-    if (pointAt === submitOrbitPoint) {
-      const arc = Math.max(0, headDistance - SUBMIT_ARROW_LENGTH);
-      hookMix = submitClamp(arc / 2.8);
-    } else if (pointAt === submitFinishPoint) {
-      hookMix = 1 - submitClamp(
-        (headDistance - (SUBMIT_ARROW_LENGTH - 2.8)) / 2.8
-      );
-    }
-
-    const backLeft = [
-      tip.x - dx * headSize + px * headSize,
-      tip.y - dy * headSize + py * headSize
-    ];
-    const backRight = [
-      tip.x - dx * headSize - px * headSize,
-      tip.y - dy * headSize - py * headSize
-    ];
-
-    // The p-side V arm slides into the 90-degree hook. The other arm collapses
-    // into the tip, so no extra stroke remains behind the head.
     const left = [
-      backLeft[0] + (hook[0] - backLeft[0]) * hookMix,
-      backLeft[1] + (hook[1] - backLeft[1]) * hookMix
+      tip[0] - dx * headBack + px * headWing,
+      tip[1] - dy * headBack + py * headWing
     ];
     const right = [
-      backRight[0] + (tip.x - backRight[0]) * hookMix,
-      backRight[1] + (tip.y - backRight[1]) * hookMix
+      tip[0] - dx * headBack - px * headWing,
+      tip[1] - dy * headBack - py * headWing
     ];
 
     submitLoaderHead.setAttribute(
       'd',
-      `M ${left[0].toFixed(2)} ${left[1].toFixed(2)} L ${tip.x.toFixed(2)} ${tip.y.toFixed(2)} L ${right[0].toFixed(2)} ${right[1].toFixed(2)}`
+      `M ${left[0].toFixed(2)} ${left[1].toFixed(2)} L ${tip[0].toFixed(2)} ${tip[1].toFixed(2)} L ${right[0].toFixed(2)} ${right[1].toFixed(2)}`
     );
 
     if (submitLoaderGroup) {

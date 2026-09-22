@@ -92,6 +92,7 @@
 
 /* Fully rounded composer; a single thicker outline on focus, no glow. */
 .question-bar {
+  isolation: isolate;
   border: 2px solid var(--line);
   border-radius: 999px;
   box-shadow: none;
@@ -120,10 +121,11 @@
 .question-bar::after {
   content: "";
   position: absolute;
-  top: 100%;
+  top: -6px;
   left: 50%;
+  z-index: -1;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh + 6px);
   transform: translateX(-50%);
   background: var(--bg);
   pointer-events: none;

@@ -43,8 +43,16 @@
   animation: qb-panel-close-two-stage 430ms cubic-bezier(.4, 0, .2, 1) both;
 }
 
-/* Preserve the animation names already awaited by question-builder.js.
-   One single Y translation works identically on desktop and mobile. */
+/* The mobile keeps its CSS slide. Desktop uses the explicit frame animation
+   from question-builder-slide.js, avoiding CSS animation and motion-setting
+   differences that previously made it appear/disappear abruptly on Windows. */
+@media (min-width: 651px) {
+  .qb-slide-viewport > .question-builder-panel.qb-panel-opening,
+  .qb-slide-viewport > .question-builder-panel.qb-panel-closing {
+    animation: none !important;
+  }
+}
+
 @keyframes qb-panel-open-two-stage {
   from { transform: translate(-50%, calc(100% + 16px)); }
   to   { transform: translate(-50%, 0); }

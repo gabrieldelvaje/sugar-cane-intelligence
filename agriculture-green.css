@@ -1,0 +1,36 @@
+/* Agricultural green palette: preserve the existing layout and animation styles. */
+:root {
+  --bg: #ffffff;
+  --surface: #f3f8f3;
+  --surface2: #eaf3eb;
+  --text: #1c3325;
+  --muted: #617a69;
+  --line: #d4e5d8;
+  --brand: #277b46;
+  --accent: #93bd68;
+}
+[data-theme="dark"] {
+  --bg: #101813;
+  --surface: #19271e;
+  --surface2: #233528;
+  --text: #edf7ef;
+  --muted: #aac3b0;
+  --line: #36503e;
+  --brand: #7ed99b;
+  --accent: #a8d273;
+}
+/* Keep the question visibly distinct from assistant messages. */
+.conversation .message.user .message-content {
+  background: #e4f4e9;
+  border-color: #b8dec3;
+  color: #18452b;
+}
+[data-theme="dark"] .conversation .message.user .message-content {
+  background: #214430;
+  border-color: #477853;
+  color: #e6f8e9;
+}
+/* Sufficient contrast for the send arrow against the lighter green in dark mode. */
+[data-theme="dark"] .question-bar button[type="submit"] {
+  color: #102618;
+}

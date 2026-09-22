@@ -1,14 +1,20 @@
-/* Use the exact uploaded SVG shape as a theme-aware icon, without redrawing it. */
+/* Os dois estados usam os SVGs originais enviados para o ícone. */
 .question-bar .question-builder-toggle .qb-uploaded-pen-icon {
   display: block;
   flex: 0 0 25px;
   width: 25px;
   height: 25px;
   background-color: currentColor;
-  -webkit-mask: url('pen-field.svg?v=2') center / contain no-repeat;
-  mask: url('pen-field.svg?v=2') center / contain no-repeat;
+  -webkit-mask: url('pen-field-outline.svg?v=1') center / contain no-repeat;
+  mask: url('pen-field-outline.svg?v=1') center / contain no-repeat;
 }
-/* An SVG X avoids font baseline offsets and is exactly centered in the circle. */
+.question-bar .question-builder-toggle[aria-expanded="true"] .qb-uploaded-pen-icon {
+  -webkit-mask-image: url('pen-field-filled.svg?v=1');
+  mask-image: url('pen-field-filled.svg?v=1');
+}
+/* O ícone muda de estado sem girar nem sair do alinhamento. */
+.question-bar .question-builder-toggle[aria-expanded="true"] { transform: none; }
+/* X vetorial centralizado dentro do círculo. */
 .question-builder-panel .qb-close {
   display: flex;
   align-items: center;

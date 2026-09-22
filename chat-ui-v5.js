@@ -42,6 +42,7 @@
   let submitLoaderHead = null;
   let submitLoaderDistance = 0;
   let submitLoaderLastFrame = 0;
+  let submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
 
   const SUBMIT_TAU = Math.PI * 2;
   const SUBMIT_RADIUS = 7;
@@ -193,13 +194,14 @@
     ].join(' ');
   }
 
-  function renderSubmitSnake(pointAt, headDistance, scale = 1) {
+  function renderSubmitSnake(pointAt, headDistance, scale = 1, visibleLength = SUBMIT_ARROW_LENGTH) {
     if (!submitLoaderShaft || !submitLoaderHead) return;
 
     // Larger head, still joined cleanly to the rounded shaft.
     const headBack = 4;
     const headWing = 4;
-    const tailDistance = headDistance - SUBMIT_ARROW_LENGTH;
+    visibleLength = Math.max(headBack + 2, visibleLength);
+    const tailDistance = headDistance - visibleLength;
     const bodyEndDistance = headDistance - headBack;
     const points = [];
 
@@ -266,10 +268,25 @@
       submitLoaderLastFrame = now;
 
       const angle = currentSubmitAngle();
-      const speedFactor = 1 + .14 * Math.sin(angle + .45);
+
+      // Screen-space vertical velocity is proportional to cos(angle):
+      // +1 on the way down, -1 on the way up, 0 at top/bottom.
+      const gravityPhase = Math.cos(angle);
+
+      // Descending: faster. Ascending: slower.
+      const speedFactor = Math.max(.66, Math.min(1.34, 1 + .34 * gravityPhase));
       submitLoaderDistance += baseSpeed * speedFactor * delta;
 
-      renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, 1);
+      // A subtle stretch follows the same gravity phase:
+      // longer while falling, shorter while climbing.
+      submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH + 1.7 * gravityPhase;
+
+      renderSubmitSnake(
+        submitOrbitPoint,
+        submitLoaderDistance,
+        1,
+        submitLoaderVisibleLength
+      );
       submitLoaderRaf = requestAnimationFrame(frame);
     };
 
@@ -287,6 +304,7 @@
     if (targetArc <= currentArc + .35) targetArc += SUBMIT_CIRCUMFERENCE;
 
     const startDistance = submitLoaderDistance;
+    const startVisibleLength = submitLoaderVisibleLength;
     const targetDistance = SUBMIT_ARROW_LENGTH + targetArc;
     const travel = targetDistance - startDistance;
     const duration = Math.max(250, Math.min(470, 230 + travel * 9));
@@ -307,8 +325,15 @@
 
         submitLoaderDistance = startDistance + travel * progress;
         const scale = 1 + .085 * Math.sin(Math.PI * raw);
+        const visibleLength = startVisibleLength +
+          (SUBMIT_ARROW_LENGTH - startVisibleLength) * submitEase(raw);
 
-        renderSubmitSnake(submitOrbitPoint, submitLoaderDistance, scale);
+        renderSubmitSnake(
+          submitOrbitPoint,
+          submitLoaderDistance,
+          scale,
+          visibleLength
+        );
 
         if (raw < 1) submitLoaderRaf = requestAnimationFrame(frame);
         else resolve();
@@ -382,6 +407,7 @@
       submitLoaderShaft = shaft;
       submitLoaderHead = head;
       submitLoaderDistance = SUBMIT_ARROW_LENGTH;
+      submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
 
       // At distance = 2R the body occupies the complete Y-axis diameter:
       // exactly the original upward arrow. The next frame bends only the tip.
@@ -399,6 +425,7 @@
       submitLoaderGroup = null;
       submitLoaderShaft = null;
       submitLoaderHead = null;
+      submitLoaderVisibleLength = SUBMIT_ARROW_LENGTH;
       submit.classList.remove('is-returning');
       submit.textContent = '↑';
       return;

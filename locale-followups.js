@@ -1,6 +1,5 @@
-/* Translate follow-ups after their generator and UF-labeling routines settle.
-   Observe structural insertions only: listening to every text change caused
-   competing English translation observers to rewrite the same node forever. */
+/* Follow-up suggestions are localized only after their generators and UF
+   labeler have settled. Text changes are never observed here. */
 (() => {
   'use strict';
   const i18n = window.SCIi18n;
@@ -8,58 +7,60 @@
   const submit = document.querySelector('#question-form button[type="submit"]');
   if (!i18n || !conversation || !submit) return;
 
-  function sourceQuestion(button) {
-    const current = button.textContent.trim();
-    const fromData = button.dataset.question;
-    if (/^(?:Qual|Quais|Compare a)\b/i.test(current)) return current;
-    if (fromData && /^(?:Qual|Quais|Compare a)\b/i.test(fromData)) {
-      return /\([A-Z]{2}\)/.test(current) && !/\([A-Z]{2}\)/.test(fromData)
-        ? i18n.toPortugueseQuestion(current) : fromData;
+  function portugueseQuestion(button) {
+    const shown = button.textContent.trim();
+    const question = button.dataset.question;
+    if (/^(?:Qual|Quais|Compare a)\b/i.test(shown)) return shown;
+    if (question && /^(?:Qual|Quais|Compare a)\b/i.test(question)) {
+      if (/\([A-Z]{2}\)/.test(shown) && !/\([A-Z]{2}\)/.test(question))
+        return i18n.toPortugueseQuestion(shown);
+      return question;
     }
-    return i18n.toPortugueseQuestion(current);
+    return i18n.toPortugueseQuestion(shown);
   }
 
-  function translateGroup(group, force = false) {
+  function translate(group, force = false) {
     if (!group.isConnected) return;
     const english = i18n.get() === 'en';
     const label = group.querySelector('.follow-up-label');
     if (label) {
       if (!label.dataset.sourcePt) {
-        label.dataset.sourcePt = label.textContent.trim() === 'You can also ask'
-          ? 'Você também pode perguntar'
-          : label.textContent.trim().startsWith('Try a comparison')
-            ? 'Experimente uma comparação com valores maiores que zero:'
-            : label.textContent.trim();
+        const shown = label.textContent.trim();
+        label.dataset.sourcePt = shown === 'You can also ask' ? 'Você também pode perguntar'
+          : shown.startsWith('Try a comparison')
+            ? 'Experimente uma comparação com valores maiores que zero:' : shown;
       }
       const source = label.dataset.sourcePt;
-      const target = english ? (source.startsWith('Experimente ')
+      const desired = english ? (source.startsWith('Experimente ')
         ? 'Try a comparison with values greater than zero:'
         : source === 'Você também pode perguntar' ? 'You can also ask' : source) : source;
-      if (label.textContent.trim() !== target) label.textContent = target;
+      if (label.textContent.trim() !== desired) label.textContent = desired;
     }
     for (const button of group.querySelectorAll('button')) {
-      if (!button.dataset.sourcePt) button.dataset.sourcePt = sourceQuestion(button);
-      const source = button.dataset.sourcePt;
-      const target = english ? i18n.toEnglishQuestion(source) : source;
-      const current = button.textContent.trim();
-      // Preserve a state abbreviation added by the other observer after
-      // translation instead of repeatedly removing and reintroducing it.
-      if (!force && english && current !== target && /\([A-Z]{2}\)/.test(current)
-          && !/\([A-Z]{2}\)/.test(target)) {
-        button.dataset.sourcePt = i18n.toPortugueseQuestion(current);
+      if (!button.dataset.sourcePt) button.dataset.sourcePt = portugueseQuestion(button);
+      const desired = english ? i18n.toEnglishQuestion(button.dataset.sourcePt)
+        : button.dataset.sourcePt;
+      const shown = button.textContent.trim();
+      // The UF labeler may add a state code after translation. Keep it;
+      // restoring the older text here would create an endless rewrite loop.
+      if (!force && english && shown !== desired && /\([A-Z]{2}\)/.test(shown)
+          && !/\([A-Z]{2}\)/.test(desired)) {
+        button.dataset.sourcePt = i18n.toPortugueseQuestion(shown);
         continue;
       }
-      if (current !== target) button.textContent = target;
+      if (shown !== desired) button.textContent = desired;
     }
   }
 
   const pending = new Set();
+  const nextFrame = typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame : callback => setTimeout(callback, 0);
   function schedule(group) {
     if (!group || pending.has(group)) return;
     pending.add(group);
-    requestAnimationFrame(() => {
+    nextFrame(() => {
       pending.delete(group);
-      translateGroup(group);
+      translate(group);
     });
   }
 
@@ -69,8 +70,8 @@
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
         if (node.matches('.follow-up-suggestions')) schedule(node);
         else {
-          const parent = node.closest('.follow-up-suggestions');
-          if (parent) schedule(parent);
+          const group = node.closest('.follow-up-suggestions');
+          if (group) schedule(group);
           node.querySelectorAll('.follow-up-suggestions').forEach(schedule);
         }
       }
@@ -80,9 +81,8 @@
   function translateLoadingError() {
     if (i18n.get() !== 'en' || submit.disabled) return;
     conversation.querySelectorAll('.chat-response .error').forEach(error => {
-      if (/^A base ainda está carregando\./.test(error.textContent.trim())) {
+      if (/^A base ainda está carregando\./.test(error.textContent.trim()))
         error.textContent = 'The dataset is still loading. Please try again in a few seconds.';
-      }
     });
   }
   new MutationObserver(translateLoadingError).observe(submit, {
@@ -90,7 +90,7 @@
   });
   document.querySelectorAll('.sci-language-menu [data-language]').forEach(button => {
     button.addEventListener('click', () => {
-      conversation.querySelectorAll('.follow-up-suggestions').forEach(group => translateGroup(group, true));
+      conversation.querySelectorAll('.follow-up-suggestions').forEach(group => translate(group, true));
       translateLoadingError();
     });
   });

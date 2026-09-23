@@ -239,51 +239,65 @@
     const repairs = detection.repairs;
     const cityRepairs = repairs.filter(repair => repair.kind === 'city');
     const pieces = [];
+    const bold = value => `<strong>${html(value)}</strong>`;
+    const quoted = value => value ? `“${bold(value)}”` : '';
 
-    if (cityRepairs.length >= 2) pieces.push(s.bothCities);
-    else if (cityRepairs.length === 1) {
+    if (cityRepairs.length >= 2) {
+      pieces.push(language === 'en'
+        ? `I could not identify the ${bold('two municipalities')} provided. There may be typos in the names.`
+        : `Não consegui identificar os ${bold('dois municípios')} informados. Parece haver erros de digitação nos nomes.`);
+    } else if (cityRepairs.length === 1) {
       const repair = cityRepairs[0];
       const position = repair.slot === 2 ? s.secondProblem : s.firstProblem;
-      const quoted = repair.original ? ` “${repair.original}”` : '';
       pieces.push(language === 'en'
-        ? `I could not identify the ${position}${quoted}. ${s.cityTypo}`
-        : `Não consegui identificar o ${position}${quoted}. ${s.cityTypo}`);
+        ? `I could not identify the ${bold(position)}${repair.original ? ` ${quoted(repair.original)}` : ''}. ${s.cityTypo}`
+        : `Não consegui identificar o ${bold(position)}${repair.original ? ` ${quoted(repair.original)}` : ''}. ${s.cityTypo}`);
     }
 
     const metricRepair = repairs.find(repair => repair.kind === 'metric');
     if (metricRepair) {
-      const quoted = metricRepair.original ? ` “${metricRepair.original}”` : '';
       pieces.push(language === 'en'
-        ? `${s.metricTypo}${quoted ? ` Check${quoted}.` : ''}`
-        : `${s.metricTypo}${quoted ? ` Revise${quoted}.` : ''}`);
+        ? `The ${bold('indicator')} appears to contain a typo.${metricRepair.original ? ` Check ${quoted(metricRepair.original)}.` : ''}`
+        : `O ${bold('indicador')} informado parece ter um erro de digitação.${metricRepair.original ? ` Revise ${quoted(metricRepair.original)}.` : ''}`);
     }
 
     const yearRepair = repairs.find(repair => repair.kind === 'year');
     if (yearRepair) {
-      const quoted = yearRepair.original ? ` “${yearRepair.original}”` : '';
+      const field = bold(language === 'en' ? 'year' : 'ano');
+      const value = yearRepair.original ? quoted(yearRepair.original) : '';
       if (yearRepair.issue === 'range') {
         pieces.push(language === 'en'
-          ? `${s.yearRange}${quoted ? ` You entered${quoted}.` : ''}`
-          : `${s.yearRange}${quoted ? ` Você informou${quoted}.` : ''}`);
+          ? `The ${field} is outside the dataset coverage. Available data covers ${bold('1974 to 2024')}.${value ? ` You entered ${value}.` : ''}`
+          : `O ${field} informado está fora da cobertura da base. Os dados disponíveis compreendem o período de ${bold('1974 a 2024')}.${value ? ` Você informou ${value}.` : ''}`);
       } else if (yearRepair.issue === 'typo') {
         pieces.push(language === 'en'
-          ? `${s.yearTypo}${quoted ? ` I found${quoted}.` : ''}`
-          : `${s.yearTypo}${quoted ? ` Encontrei${quoted}.` : ''}`);
+          ? `The value entered for the ${field} looks mistyped.${value ? ` I found ${value}.` : ''}`
+          : `O valor informado para o ${field} parece ter sido digitado incorretamente.${value ? ` Encontrei ${value}.` : ''}`);
       } else {
         pieces.push(language === 'en'
-          ? `${s.yearProblem}${quoted ? ` I found${quoted}.` : ''}`
-          : `${s.yearProblem}${quoted ? ` Encontrei${quoted}.` : ''}`);
+          ? `The ${field} does not match a valid year in the dataset.${value ? ` I found ${value}.` : ''}`
+          : `O ${field} informado não corresponde a um ano válido da base.${value ? ` Encontrei ${value}.` : ''}`);
       }
     }
 
-    if (repairs.some(repair => repair.kind === 'location')) pieces.push(s.missingLocation);
-    if (repairs.some(repair => ['metricMissing', 'ranking'].includes(repair.kind))) pieces.push(s.missingMetric);
+    if (repairs.some(repair => repair.kind === 'location')) {
+      pieces.push(language === 'en'
+        ? `The ${bold('municipality')} to analyze is missing.`
+        : `Falta informar qual ${bold('município')} você quer analisar.`);
+    }
+    if (repairs.some(repair => ['metricMissing', 'ranking'].includes(repair.kind))) {
+      pieces.push(language === 'en'
+        ? `I could not identify which ${bold('indicator')} you want to analyze.`
+        : `Não consegui identificar qual ${bold('indicador')} você quer analisar.`);
+    }
     if (repairs.some(repair => repair.kind === 'metricChoice') &&
         !repairs.some(repair => ['metric', 'metricMissing', 'ranking'].includes(repair.kind))) {
-      pieces.push(s.confirmMetric);
+      pieces.push(language === 'en'
+        ? `Please also confirm the ${bold('indicator')} before continuing.`
+        : `Confirme também o ${bold('indicador')} antes de continuar.`);
     }
 
-    return pieces.join(' ') || s.fallbackProblem;
+    return pieces.join(' ') || html(s.fallbackProblem);
   }
 
   function field(repair, index, language) {
@@ -291,9 +305,12 @@
     const city = ['city', 'location'].includes(repair.kind);
     const label = repair.kind === 'year' ? s.year : city
       ? repair.slot === 2 ? s.second : repair.kind === 'city' ? s.first : s.city : s.metric;
-    const options = repair.values.map(value => {
+    const options = repair.values.map((value, optionIndex) => {
       const found = metrics.find(metric => metric.id === value);
-      return `<option value="${html(value)}"${value === repair.preferred ? ' selected' : ''}>${html(found ? found[language] : value)}</option>`;
+      const recommended = repair.kind === 'city' ? optionIndex < 3
+        : repair.kind === 'year' ? optionIndex === 0
+        : value === repair.preferred;
+      return `<option value="${html(value)}"${value === repair.preferred ? ' selected' : ''}${recommended ? ' data-recommended="true"' : ''}>${html(found ? found[language] : value)}</option>`;
     }).join('');
     return `<label class="sci-repair-field"><span>${html(label)}</span>` +
       `<select class="sci-repair-select" data-repair-index="${index}" data-repair-kind="${repair.kind}" aria-label="${html(label)}">` +
@@ -314,7 +331,7 @@
         `<button type="button" class="sci-scope-example" data-sci-scope-example="${html(s.yearExample2)}">${html(s.yearExample2)}</button>` +
         `<button type="button" class="sci-scope-builder">${html(s.builder)}</button></div>`
       : '';
-    return `<div class="error"><div class="sci-repair-intro"><strong>${html(s.title)}</strong><br><span class="sci-repair-diagnosis">${html(problem)}</span><br>${html(s.hint)}</div></div>` +
+    return `<div class="error"><div class="sci-repair-intro"><strong>${html(s.title)}</strong><br><span class="sci-repair-diagnosis">${problem}</span><br>${html(s.hint)}</div></div>` +
       `<div class="sci-scope-actions sci-repair-actions">` +
       detection.repairs.map((repair, index) => field(repair, index, language)).join('') +
       '<p class="sci-repair-feedback" role="status" hidden></p>' +

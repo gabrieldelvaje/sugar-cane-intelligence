@@ -1,15 +1,15 @@
 /* Clear, non-blocking guidance when a question cannot be analyzed.
    Uses theme variables so it works in light and dark mode. */
-/* Mirror the farmer bubble: a soft tip at the upper-left and three
-   generously rounded corners. Keep radii finite to avoid CSS scaling them
-   down and flattening the lower corners on short messages. */
+/* Mirror the farmer bubble: the upper-left is the soft tip, while the
+   lower-left radius is 25% smaller than the rounded right corners.
+   Finite radii stay balanced even when a warning spans several lines. */
 .conversation .message.assistant .error {
-  border-radius: 14px 56px 56px 56px;
+  border-radius: 14px 56px 56px 42px;
 }
 .conversation .message.assistant .error:has(+ .sci-scope-actions) {
   padding: 14px 17px;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
-  border-radius: 14px 56px 56px 56px;
+  border-radius: 14px 56px 56px 42px;
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 10%, var(--bg));
   line-height: 1.55;

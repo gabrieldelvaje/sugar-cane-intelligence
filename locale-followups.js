@@ -1,5 +1,5 @@
-/* Follow-up suggestions are localized only after their generators and UF
-   labeler have settled. Text changes are never observed here. */
+/* Follow-up suggestions localize after generators and UF labeler settle.
+   Do not observe text mutations: this prevents response re-render loops. */
 (() => {
   'use strict';
   const i18n = window.SCIi18n;
@@ -41,8 +41,7 @@
       const desired = english ? i18n.toEnglishQuestion(button.dataset.sourcePt)
         : button.dataset.sourcePt;
       const shown = button.textContent.trim();
-      // The UF labeler may add a state code after translation. Keep it;
-      // restoring the older text here would create an endless rewrite loop.
+      // The UF labeler may add a state code after translation. Preserve it.
       if (!force && english && shown !== desired && /\([A-Z]{2}\)/.test(shown)
           && !/\([A-Z]{2}\)/.test(desired)) {
         button.dataset.sourcePt = i18n.toPortugueseQuestion(shown);
@@ -88,11 +87,9 @@
   new MutationObserver(translateLoadingError).observe(submit, {
     attributes: true, attributeFilter: ['disabled']
   });
-  document.querySelectorAll('.sci-language-menu [data-language]').forEach(button => {
-    button.addEventListener('click', () => {
-      conversation.querySelectorAll('.follow-up-suggestions').forEach(group => translate(group, true));
-      translateLoadingError();
-    });
+  document.querySelector('.sci-language-toggle')?.addEventListener('sci:language-changed', () => {
+    conversation.querySelectorAll('.follow-up-suggestions').forEach(group => translate(group, true));
+    translateLoadingError();
   });
   conversation.querySelectorAll('.follow-up-suggestions').forEach(schedule);
 })();

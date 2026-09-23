@@ -34,6 +34,8 @@
       /\b(?:municipios?|cidades?|municipalities|cities|ranking|rank|top)\b/.test(text);
   }
 
+  const capabilityIntent = /^(?:o que (?:voce|você) pode fazer|o que posso fazer|what can you do|what can i do)[?!.\s]*$/i;
+
   function classify(question) {
     const raw = String(question ?? '').trim();
     const text = normalize(raw);
@@ -117,29 +119,59 @@
 
   const examples = {
     pt: [
-      'Qual município teve maior produção de cana em 2024?',
-      'Qual foi a temperatura média em Piracicaba em 2011?'
+      'O que você pode fazer?',
+      'Qual município teve maior produção de cana em 2024?'
     ],
     en: [
-      'Which municipality had the highest sugarcane production in 2024?',
-      'What was the average temperature in Piracicaba in 2011?'
+      'What can you do?',
+      'Which municipality had the highest sugarcane production in 2024?'
     ]
   };
   const copy = {
     pt: {
       topic: 'Não consigo responder a essa pergunta. Fui desenvolvido para analisar dados municipais de cana-de-açúcar, área colhida, produtividade, temperatura e precipitação no Brasil, de 1974 a 2024.',
       format: 'Não consigo gerar uma análise confiável com essa pergunta. Informe o indicador e o município, ou peça um ranking ou uma comparação entre dois municípios. Os dados disponíveis vão de 1974 a 2024.',
-      hint: 'Você pode experimentar uma destas perguntas ou usar o construtor:',
-      builder: 'Montar minha pergunta'
+      hint: 'Você pode ver o que eu consigo fazer, experimentar uma pergunta ou usar o construtor:',
+      builder: 'Montar minha pergunta',
+      capabilitiesTitle: 'O que é o Sugar Cane Intelligence?',
+      capabilitiesIntro: 'É uma ferramenta de análise municipal que transforma perguntas sobre cana-de-açúcar e clima em respostas, rankings, comparações e séries históricas usando a base disponível de 1974 a 2024.',
+      capabilitiesItems: [
+        '<strong>Produção de cana</strong> — consulte valores e municípios líderes.',
+        '<strong>Área colhida</strong> — analise a área destinada à cultura.',
+        '<strong>Produtividade</strong> — compare o rendimento entre municípios.',
+        '<strong>Precipitação</strong> — investigue chuva por município e período.',
+        '<strong>Temperatura média</strong> — consulte e compare condições térmicas.'
+      ],
+      capabilitiesFooter: 'Você pode consultar um município, criar rankings, comparar duas cidades ou analisar um período. Se preferir, monte a pergunta passo a passo.'
     },
     en: {
       topic: 'I cannot answer that question. I am designed to analyze Brazilian municipal data on sugarcane production, harvested area, yield, temperature, and rainfall from 1974 to 2024.',
       format: 'I cannot produce a reliable analysis from that request. Please specify a metric and municipality, or ask for a ranking or a comparison between two municipalities. The available data covers 1974 to 2024.',
-      hint: 'Try one of these questions, or use the question builder:',
-      builder: 'Build my question'
+      hint: 'See what I can do, try a question, or use the question builder:',
+      builder: 'Build my question',
+      capabilitiesTitle: 'What is Sugar Cane Intelligence?',
+      capabilitiesIntro: 'It is a municipal analytics tool that turns questions about sugarcane and climate into answers, rankings, comparisons, and historical series using the available 1974–2024 dataset.',
+      capabilitiesItems: [
+        '<strong>Sugarcane production</strong> — explore values and leading municipalities.',
+        '<strong>Harvested area</strong> — analyze the area used for the crop.',
+        '<strong>Yield</strong> — compare productivity across municipalities.',
+        '<strong>Rainfall</strong> — investigate precipitation by municipality and period.',
+        '<strong>Average temperature</strong> — explore and compare thermal conditions.'
+      ],
+      capabilitiesFooter: 'You can look up one municipality, create rankings, compare two cities, or analyze a time period. Or build the question step by step.'
+
     }
   };
   const escapeAttr = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+  function capabilities() {
+    const language = window.SCIi18n?.get() === 'en' ? 'en' : 'pt';
+    const strings = copy[language];
+    return `<div class="sci-capability-overview"><h2>${strings.capabilitiesTitle}</h2><p>${strings.capabilitiesIntro}</p>` +
+      `<ul>${strings.capabilitiesItems.map(item => `<li>${item}</li>`).join('')}</ul>` +
+      `<p>${strings.capabilitiesFooter}</p></div>` +
+      `<div class="sci-scope-actions sci-capability-actions"><button type="button" class="sci-scope-builder">${strings.builder}</button></div>`;
+  }
 
   function guidance(reason) {
     const language = window.SCIi18n?.get() === 'en' ? 'en' : 'pt';
@@ -154,8 +186,10 @@
 
   const originalAnswer = answer;
   answer = function scopeCheckedAnswer(question) {
-    const reason = classify(question);
-    return reason ? guidance(reason) : originalAnswer(implicitProductionQuestion(question));
+    const raw = String(question ?? '').trim();
+    if (capabilityIntent.test(raw)) return capabilities();
+    const reason = classify(raw);
+    return reason ? guidance(reason) : originalAnswer(implicitProductionQuestion(raw));
   };
 
   const conversation = document.querySelector('#conversation');

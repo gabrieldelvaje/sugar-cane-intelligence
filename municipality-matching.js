@@ -24,9 +24,18 @@
     if (isRanking && !isComparison) return [];
 
     const padded = ` ${text} `;
-    const matches = names.filter(entry => padded.includes(` ${entry.text} `))
-      .sort((a, b) => b.text.length - a.text.length);
+    const matches = names.filter(entry => padded.includes(` ${entry.text} `));
 
+    // In a two-city comparison, "Ribeirão e Piracicaba" is a common short
+    // form of Ribeirão Preto. Only expand a standalone "Ribeirão" before a
+    // separator, never another complete municipality such as Ribeirão Grande.
+    if (isComparison && /\bribeirao(?=\s+(?:e|com|and|vs|versus)\b|\s*[,?]|$)/.test(text)) {
+      const ribeiraoPreto = names.find(entry => entry.text === 'ribeirao preto');
+      if (ribeiraoPreto && !matches.some(entry => entry.text === ribeiraoPreto.text))
+        matches.push(ribeiraoPreto);
+    }
+
+    matches.sort((a, b) => b.text.length - a.text.length);
     return matches.filter((entry, index) => !matches.slice(0, index).some(
       longer => ` ${longer.text} `.includes(` ${entry.text} `)
     )).slice(0, 2).map(entry => entry.name);

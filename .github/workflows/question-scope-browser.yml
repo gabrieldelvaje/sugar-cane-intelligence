@@ -5,6 +5,8 @@ on:
     paths:
       - 'question-scope.js'
       - 'chat-ui-v5.js'
+      - 'historical-line-charts.js'
+      - 'locale-answers.js'
       - 'dynamic-questions.js'
       - 'styles.css'
       - 'locale-ui-dictionary.js'
@@ -19,6 +21,7 @@ on:
       - 'tests/question-scope.browser.cjs'
       - 'tests/implicit-production.browser.cjs'
       - 'tests/question-correction.browser.cjs'
+      - 'tests/historical-trend.browser.cjs'
       - '.github/workflows/question-scope-browser.yml'
   workflow_dispatch:
 
@@ -45,4 +48,4 @@ jobs:
           cat /tmp/sci-scope-http.log
           exit 1
       - name: Check scope, implicit production, and searchable correction dropdowns
-        run: node --check question-correction.js && node --check question-correction-combobox.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs
+        run: node --check question-correction.js && node --check question-correction-combobox.js && node --check historical-line-charts.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs tests/historical-trend.browser.cjs

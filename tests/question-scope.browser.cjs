@@ -55,6 +55,8 @@ for (const locale of ['pt', 'en']) {
       assert.equal(await greeting.locator('.sci-scope-example').count(), 2);
       assert.equal(await greeting.locator('.sci-scope-example').first().innerText(),
         locale === 'pt' ? 'O que você pode fazer?' : 'What can you do?');
+      assert.ok(await greeting.locator('.sci-scope-example').first().evaluate(node =>
+        node.classList.contains('sci-capability-suggestion')));
       assert.equal(await greeting.locator('.sci-scope-builder').count(), 1);
       assert.equal(await greeting.locator('.follow-up-suggestions').count(), 0);
 

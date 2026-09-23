@@ -32,7 +32,10 @@ async function ask(page, question) {
     const send = document.querySelector('#question-form button[type="submit"]');
     return !send.disabled && !!document.querySelector('.chat-response:last-child');
   }, { timeout: 15000 });
-  return page.locator('.chat-response').last();
+  // Freeze the response index. A lazy `.last()` locator would start pointing
+  // to a different answer as soon as another question was submitted.
+  const index = await page.locator('.chat-response').count() - 1;
+  return page.locator('.chat-response').nth(index);
 }
 
 async function switchLanguage(page, locale) {

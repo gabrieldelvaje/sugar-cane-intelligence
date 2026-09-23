@@ -2,6 +2,7 @@
 window.SCIuiStrings = Object.freeze({
   'Desenvolvido por Gabriel Delvaje': 'Developed by Gabriel Delvaje',
   'O que você quer saber sobre a cana?': 'What would you like to know about sugarcane?',
+  'O que você pode fazer?': 'What can you do?',
   'Consulte produção, área, produtividade, temperatura, chuva, municípios e períodos.': 'Explore production, harvested area, yield, temperature, rainfall, municipalities, and time periods.',
   'Carregando base integrada': 'Loading integrated dataset',
   'PAM/IBGE + CRU TS, de 1974 a 2024.': 'PAM/IBGE + CRU TS, 1974–2024.',

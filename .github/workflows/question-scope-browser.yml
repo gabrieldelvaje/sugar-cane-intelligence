@@ -7,6 +7,8 @@ on:
       - 'question-scope.css'
       - 'question-correction.js'
       - 'question-correction.css'
+      - 'question-correction-combobox.js'
+      - 'question-correction-combobox.css'
       - 'municipality-matching.js'
       - 'locale-ui-stable.js'
       - 'index.html'
@@ -38,5 +40,5 @@ jobs:
           done
           cat /tmp/sci-scope-http.log
           exit 1
-      - name: Check off-topic guidance, implicit production and correction controls
-        run: node --check question-correction.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs
+      - name: Check scope, implicit production, and searchable correction dropdowns
+        run: node --check question-correction.js && node --check question-correction-combobox.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs

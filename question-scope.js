@@ -8,7 +8,7 @@
   const normalize = value => String(value ?? '').normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const measurable = /\b(?:producao|produzid[ao]s?|produzir|produziu|produtores?|production|produced|producer|area colhida|area cultivada|area de cana|harvested area|cultivated area|hectares?|produtividade|rendimento|yield|productivity|precipitacao|pluviosidade|chuvas?|choveu|rainfall|precipitation|rained|temperatura|temperature)\b/;
-  const questionIntent = /\b(?:qual|quais|quanto|quantos|compare|comparar|comparacao|ranking|rank|top|maior|maiores|menor|menores|media|historica|historico|evolucao|serie|mostrar|mostre|liste|listar|dados|which|what|how|compare|comparison|rank|ranking|top|highest|lowest|largest|biggest|average|historical|show|list|data|trend)\b/;
+  const questionIntent = /\b(?:qual|quais|como|quanto|quantos|compare|comparar|comparacao|ranking|rank|top|maior|maiores|menor|menores|media|historica|historico|evolucao|serie|mostrar|mostre|liste|listar|dados|which|what|how|compare|comparison|rank|ranking|top|highest|lowest|largest|biggest|average|historical|show|list|data|trend)\b/;
   const rankingIntent = /\b(?:municipios?|cidades?|municipalities|cities|ranking|rank|top|maior|maiores|menor|menores|lider|leading|highest|lowest|largest|biggest)\b/;
   const compareIntent = /\b(?:compar(?:e|ar|acao)|comparison|versus|vs|difference between)\b/;
   const unsupportedTopic = /\b(?:jogos?|partidas?|placar|futebol|basquete|campeonatos?|gols?|games?|soccer|football|basketball|matches|match|scores?|filmes?|movies?|musicas?|songs?|eleicoes?|elections?|lot[eo]ria|lottery|populacao|population|habitantes?|pib|gdp|renda|income|criminalidade|crimes?|desemprego|unemployment|precos?|prices?)\b/;
@@ -17,7 +17,7 @@
   const numberWords = Object.freeze({
     um: 1, uma: 1, one: 1, dois: 2, duas: 2, two: 2, tres: 3, three: 3,
     quatro: 4, four: 4, cinco: 5, five: 5, seis: 6, six: 6, sete: 7,
-    seven: 7, oito: 8, eight: 8, nove: 9, nine: 9, dez: 10, ten: 10,
+    seven: 7, oito: 8, eight: 8, dez: 10, ten: 10,
     onze: 11, eleven: 11, doze: 12, twelve: 12, quinze: 15, fifteen: 15,
     vinte: 20, twenty: 20
   });

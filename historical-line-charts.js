@@ -35,6 +35,51 @@
     return ['temperature', 'productivity'].includes(metricName) ? 2 : 0;
   }
 
+  function linearTrend(points) {
+    const valid = points.filter(point => Number.isFinite(point.year) && Number.isFinite(point.value));
+    if (valid.length < 2) return null;
+    const meanYear = valid.reduce((sum, point) => sum + point.year, 0) / valid.length;
+    const meanValue = valid.reduce((sum, point) => sum + point.value, 0) / valid.length;
+    let numerator = 0;
+    let denominator = 0;
+    valid.forEach(point => {
+      const dx = point.year - meanYear;
+      numerator += dx * (point.value - meanValue);
+      denominator += dx * dx;
+    });
+    if (!denominator) return null;
+    const slope = numerator / denominator;
+    const intercept = meanValue - slope * meanYear;
+    const firstYear = valid[0].year;
+    const lastYear = valid[valid.length - 1].year;
+    const firstValue = intercept + slope * firstYear;
+    const lastValue = intercept + slope * lastYear;
+    const fittedChange = lastValue - firstValue;
+    const scale = Math.max(
+      Math.abs(meanValue),
+      ...valid.map(point => Math.abs(point.value)),
+      1e-9
+    );
+    const relativeChange = Math.abs(fittedChange) / scale;
+    const direction = relativeChange < .01 ? 'stable' : slope > 0 ? 'up' : 'down';
+    return { slope, intercept, firstYear, lastYear, firstValue, lastValue, direction };
+  }
+
+  function trendLabel(direction) {
+    return direction === 'up' ? 'Ascensão' : direction === 'down' ? 'Queda' : 'Estável';
+  }
+
+  function trendArrow(direction) {
+    return direction === 'up' ? '↗' : direction === 'down' ? '↘' : '→';
+  }
+
+  function trendMarkup(trend, className = '') {
+    if (!trend) return '';
+    return '<span class="historical-trend-value historical-trend-' + trend.direction +
+      (className ? ' ' + className : '') + '" data-trend="' + trend.direction + '">' +
+      trendArrow(trend.direction) + ' ' + trendLabel(trend.direction) + '</span>';
+  }
+
   function yearlySeries(rows, metricName, municipality) {
     const matching = rows.filter(row =>
       row.municipality === municipality && Number.isFinite(row[metricName])
@@ -46,16 +91,19 @@
       groupedYears.get(row.year).push(row);
     });
 
+    const points = [...groupedYears.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([year, yearRows]) => ({
+        year: Number(year),
+        value: agg(yearRows, metricName)
+      }))
+      .filter(point => Number.isFinite(point.value));
+
     return {
       name: municipality,
       uf: matching[0]?.uf || '',
-      points: [...groupedYears.entries()]
-        .sort((a, b) => a[0] - b[0])
-        .map(([year, yearRows]) => ({
-          year: Number(year),
-          value: agg(yearRows, metricName)
-        }))
-        .filter(point => Number.isFinite(point.value))
+      points,
+      trend: linearTrend(points)
     };
   }
 
@@ -69,6 +117,9 @@
     const allPoints = available.flatMap(item => item.points);
     const allYears = [...new Set(allPoints.map(point => point.year))].sort((a, b) => a - b);
     const allValues = allPoints.map(point => point.value);
+    available.forEach(item => {
+      if (item.trend) allValues.push(item.trend.firstValue, item.trend.lastValue);
+    });
 
     const minYear = Math.min(...allYears);
     const maxYear = Math.max(...allYears);
@@ -128,6 +179,12 @@
         (pointIndex ? 'L ' : 'M ') + x(point.year).toFixed(2) + ' ' + y(point.value).toFixed(2)
       ).join(' ');
       const seriesLabel = item.uf ? item.name + ' (' + item.uf + ')' : item.name;
+      const trendPath = item.trend
+        ? '<path class="historical-trend-line" d="M ' +
+          x(item.trend.firstYear).toFixed(2) + ' ' + y(item.trend.firstValue).toFixed(2) +
+          ' L ' + x(item.trend.lastYear).toFixed(2) + ' ' + y(item.trend.lastValue).toFixed(2) +
+          '" fill="none" style="stroke:' + color + '" aria-hidden="true"></path>'
+        : '';
       const dots = item.points.map(point =>
         '<circle class="historical-point" cx="' + x(point.year).toFixed(2) + '" cy="' +
         y(point.value).toFixed(2) + '" r="4.25" tabindex="0" role="button" ' +
@@ -137,8 +194,9 @@
         '" data-value="' + esc(fmt(point.value, decimals(metricName)) + ' ' +
         info[metricName].unit) + '" style="fill:' + color + '"></circle>'
       ).join('');
-      return '<path d="' + path + '" fill="none" style="stroke:' + color +
-        '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>' + dots;
+      return '<path class="historical-observed-line" d="' + path + '" fill="none" style="stroke:' + color +
+        '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>' +
+        trendPath + dots;
     }).join('');
 
     const legend = available.map((item, index) => {
@@ -149,13 +207,53 @@
     }).join('');
 
     const label = info[metricName]?.label || 'Indicador';
+    const trendLegend = '<span class="historical-trend-key"><i></i><span class="historical-trend-label">Tendência linear</span></span>';
     return '<div class="chart historical-line-chart">' +
       '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Série histórica de ' +
       esc(label.toLowerCase()) + '">' + grid + lines + yLabels + xLabels + '</svg>' +
-      '<div class="legend"><strong>' + esc(label) + ' por ano</strong> — ' + legend + '</div>' +
+      '<div class="legend"><strong>' + esc(label) + ' por ano</strong> — ' + legend + trendLegend + '</div>' +
       '</div>';
   }
 
+
+  function addCityTrend(html, series) {
+    if (!series?.trend) return html;
+    const fragment = document.createElement('div');
+    fragment.innerHTML = html;
+    const cards = fragment.querySelector('.kpis');
+    if (!cards) return html;
+    const card = document.createElement('div');
+    card.className = 'kpi historical-trend-kpi';
+    const caption = document.createElement('span');
+    caption.textContent = 'Tendência';
+    const value = document.createElement('strong');
+    value.innerHTML = trendMarkup(series.trend);
+    card.append(caption, value);
+    cards.append(card);
+    return fragment.innerHTML;
+  }
+
+  function addComparisonTrends(html, series) {
+    const available = new Map(series.filter(item => item.trend).map(item => [item.name, item.trend]));
+    if (!available.size) return html;
+    const fragment = document.createElement('div');
+    fragment.innerHTML = html;
+    const table = fragment.querySelector('.data-table');
+    if (!table) return html;
+    const heading = document.createElement('th');
+    heading.className = 'historical-trend-column';
+    heading.textContent = 'Tendência';
+    table.querySelector('thead tr')?.append(heading);
+    table.querySelectorAll('tbody tr').forEach(row => {
+      const municipality = row.children[1]?.textContent?.trim() || '';
+      const trend = available.get(municipality);
+      const cell = document.createElement('td');
+      cell.className = 'historical-trend-cell';
+      cell.innerHTML = trendMarkup(trend);
+      row.append(cell);
+    });
+    return fragment.innerHTML;
+  }
 
   function installTooltip() {
     if (document.querySelector('.historical-chart-tooltip')) return;
@@ -246,7 +344,8 @@
 
     const series = yearlySeries(subset(question), metricName, municipality);
     const chart = lineChart([series], metricName);
-    return chart ? html + chart : html;
+    const enhanced = addCityTrend(html, series);
+    return chart ? enhanced + chart : enhanced;
   };
 
   compare = function compareWithHistoricalChart(question, metricName, municipalities) {
@@ -259,7 +358,8 @@
       yearlySeries(rows, metricName, name)
     );
     const chart = lineChart(series, metricName);
-    return chart ? html + chart : html;
+    const enhanced = addComparisonTrends(html, series);
+    return chart ? enhanced + chart : enhanced;
   };
 
   installTooltip();

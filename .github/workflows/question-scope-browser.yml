@@ -8,6 +8,7 @@ on:
       - 'historical-line-charts.js'
       - 'locale-answers.js'
       - 'dynamic-questions.js'
+      - 'como-foi-i18n.js'
       - 'indicator-synonyms.js'
       - 'styles.css'
       - 'locale-ui-dictionary.js'
@@ -24,6 +25,7 @@ on:
       - 'tests/question-correction.browser.cjs'
       - 'tests/historical-trend.browser.cjs'
       - 'tests/indicator-synonyms.browser.cjs'
+      - 'tests/como-foi.browser.cjs'
       - '.github/workflows/question-scope-browser.yml'
   workflow_dispatch:
 
@@ -50,4 +52,4 @@ jobs:
           cat /tmp/sci-scope-http.log
           exit 1
       - name: Check scope, indicators, and correction dropdowns
-        run: node --check indicator-synonyms.js && node --check question-correction.js && node --check question-correction-combobox.js && node --check historical-line-charts.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs tests/historical-trend.browser.cjs tests/indicator-synonyms.browser.cjs
+        run: node --check como-foi-i18n.js && node --check dynamic-questions.js && node --check question-scope.js && node --check locale-ui-stable.js && node --check indicator-synonyms.js && node --check question-correction.js && node --check question-correction-combobox.js && node --check historical-line-charts.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs tests/historical-trend.browser.cjs tests/indicator-synonyms.browser.cjs tests/como-foi.browser.cjs

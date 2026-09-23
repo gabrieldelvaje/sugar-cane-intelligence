@@ -137,7 +137,8 @@
       if (!available.length) return null;
       const { year, cities } = pick(available);
       const city = pick(cities);
-      const question = `Qual foi a ${label} em ${city} em ${year}?`;
+      const opening = pick(['Qual foi', 'Como foi']);
+      const question = `${opening} a ${label} em ${city} em ${year}?`;
       return typeof places !== 'function' || places(question).includes(city) ? question : null;
     }
 

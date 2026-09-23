@@ -35,6 +35,12 @@ async function ask(page, question) {
   return page.locator('.chat-response').last();
 }
 
+async function switchLanguage(page, locale) {
+  await page.locator('.sci-language-toggle').click();
+  await page.locator(`.sci-language-menu [data-language="${locale}"]`).click();
+  await page.waitForFunction(expected => window.SCIi18n.get() === expected, locale);
+}
+
 for (const locale of ['pt', 'en']) {
   test(`off-topic messages do not generate municipal results (${locale})`, async () => {
     const browser = await chromium.launch({ headless: true });
@@ -80,6 +86,47 @@ for (const locale of ['pt', 'en']) {
       assert.equal(await valid.locator('.error').count(), 0);
       assert.match(await valid.innerText(), locale === 'pt' ? /19,71/ : /19\.71/);
       assert.ok(await valid.locator('.kpi').count() > 0);
+    } finally {
+      await browser.close();
+    }
+  });
+}
+
+for (const viewport of [
+  { label: 'mobile', width: 390, height: 844, isMobile: true },
+  { label: 'desktop', width: 1366, height: 800, isMobile: false }
+]) {
+  test(`English scope warnings remain warnings after EN→PT→EN on ${viewport.label}`, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({
+      viewport: { width: viewport.width, height: viewport.height }, isMobile: viewport.isMobile
+    });
+    try {
+      await start(page, 'en');
+      const greeting = await ask(page, 'Hi, how are you?');
+      const game = await ask(page, 'What was the result of yesterday’s game?');
+      const incomplete = await ask(page, 'What was the rainfall?');
+      const warnings = [greeting, game, incomplete];
+      for (const locale of ['pt', 'en', 'pt']) {
+        await switchLanguage(page, locale);
+        for (const [index, warning] of warnings.entries()) {
+          const message = await warning.locator('.error').innerText();
+          const expected = locale === 'pt'
+            ? (index === 2 ? /Não consigo gerar uma análise confiável/ : /Não consigo responder a essa pergunta/)
+            : (index === 2 ? /I cannot produce a reliable analysis/ : /I cannot answer that question/);
+          assert.match(message, expected);
+          assert.equal(await warning.locator('.sci-scope-actions').count(), 1);
+          assert.equal(await warning.locator('.kpi, .data-table, .ranking-bar-chart').count(), 0);
+          assert.equal(await warning.locator('.sci-scope-example').count(), 2);
+          assert.equal(await warning.locator('.sci-scope-builder').count(), 1);
+          assert.equal(await warning.locator('.follow-up-suggestions').count(), 0);
+          assert.doesNotMatch(message, /leading municipality|município com maior produção/i);
+        }
+        assert.match(await greeting.locator('.sci-scope-builder').innerText(),
+          locale === 'pt' ? /Montar minha pergunta/ : /Build my question/);
+      }
+      await greeting.locator('.sci-scope-builder').click();
+      await page.waitForFunction(() => document.body.classList.contains('question-builder-open'));
     } finally {
       await browser.close();
     }

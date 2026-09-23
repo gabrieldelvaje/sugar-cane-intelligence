@@ -98,3 +98,8 @@
   border-color:var(--brand);
   background:color-mix(in srgb,var(--brand) 14%,var(--surface));
 }
+
+/* During word-by-word streaming, reveal each bullet with its first word. */
+.conversation .message.assistant .sci-capability-overview li.chat-stream-marker-pending::marker{
+  color:transparent;
+}

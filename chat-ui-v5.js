@@ -532,7 +532,7 @@
     return group;
   }
   function prepare(content) {
-    const textBlocks = [...content.querySelectorAll('.result-title, .answer, .error')];
+    const textBlocks = [...content.querySelectorAll('.result-title, .answer, .error, .sci-capability-overview')];
     const deferred = [...content.children].filter(el => !textBlocks.includes(el));
     deferred.forEach(el => el.classList.add('chat-deferred'));
     const tokens = [];

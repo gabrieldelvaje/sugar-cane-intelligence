@@ -75,3 +75,26 @@
 .conversation .message.assistant .sci-capability-overview li::marker{color:var(--brand)}
 .conversation .message.assistant .sci-capability-actions{margin-top:8px}
 .conversation .message.assistant .sci-capability-actions .sci-scope-builder{background:color-mix(in srgb,var(--brand) 8%,var(--surface))}
+
+/* Match the highlighted onboarding prompt inside off-topic guidance. */
+.conversation .message.assistant .sci-scope-actions .sci-capability-suggestion{
+  border-color:color-mix(in srgb,var(--brand) 48%,var(--line));
+  background:color-mix(in srgb,var(--brand) 9%,var(--surface));
+  color:var(--brand);
+  font-weight:700;
+  position:relative;
+  padding-right:42px;
+}
+.conversation .message.assistant .sci-scope-actions .sci-capability-suggestion:after{
+  content:'✦';
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:15px;
+}
+.conversation .message.assistant .sci-scope-actions .sci-capability-suggestion:hover,
+.conversation .message.assistant .sci-scope-actions .sci-capability-suggestion:focus-visible{
+  border-color:var(--brand);
+  background:color-mix(in srgb,var(--brand) 14%,var(--surface));
+}

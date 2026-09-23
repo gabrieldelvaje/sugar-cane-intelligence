@@ -537,14 +537,19 @@
     deferred.forEach(el => el.classList.add('chat-deferred'));
     const tokens = [];
     for (const block of textBlocks) {
+      // List markers are browser-generated, so they would otherwise appear
+      // before the streamed text. Keep each marker hidden until the first word
+      // of its own list item is emitted.
+      block.querySelectorAll('li').forEach(item => item.classList.add('chat-stream-marker-pending'));
       const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
       const nodes = [];
       while (walker.nextNode()) nodes.push(walker.currentNode);
       for (const node of nodes) {
         const words = node.textContent.match(/\s*\S+\s*/gu);
         if (!words) continue;
+        const listItem = node.parentElement?.closest('li') || null;
         node.textContent = '';
-        words.forEach(word => tokens.push({ node, word }));
+        words.forEach(word => tokens.push({ node, word, listItem }));
       }
     }
     return { tokens, deferred };
@@ -552,7 +557,10 @@
   async function stream(content, prepared, active) {
     const { tokens, deferred } = prepared;
     if (!motionOn || !tokens.length) {
-      tokens.forEach(({ node, word }) => { node.textContent += word; });
+      tokens.forEach(({ node, word, listItem }) => {
+        listItem?.classList.remove('chat-stream-marker-pending');
+        node.textContent += word;
+      });
     } else {
       const caret = document.createElement('span');
       caret.className = 'chat-stream-cursor';
@@ -566,7 +574,10 @@
           if (started === undefined) started = now;
           const target = document.hidden ? tokens.length : Math.min(tokens.length, 1 + Math.floor((now - started) / interval));
           while (index < target) {
-            const { node, word } = tokens[index++];
+            const { node, word, listItem } = tokens[index++];
+            // Reveal the bullet with the first word of that list item so the
+            // marker participates in the same streaming rhythm as the text.
+            listItem?.classList.remove('chat-stream-marker-pending');
             node.textContent += word;
             node.after(caret);
           }

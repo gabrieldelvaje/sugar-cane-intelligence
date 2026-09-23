@@ -115,12 +115,12 @@
       const followups = content.querySelector('.follow-up-suggestions');
       if (followups) followups.remove();
       try {
-        // Scope warnings already represent an invalid question. Preserve the
-        // exact original input when changing languages; converting an English
-        // greeting or unrelated question into Portuguese would otherwise
-        // manufacture a sugarcane-production request and replace the warning.
+        // Preserve original input for both scope warnings and valid municipal
+        // requests with an implicit production indicator. Converting the latter
+        // could lose the intended comparison or the requested ranking size.
         const isScopeWarning = !!content.querySelector('.sci-scope-actions');
-        const ptQuestion = isScopeWarning ? question : i18n.toPortugueseQuestion(question);
+        const keepOriginal = isScopeWarning || window.SCIimplicitProduction?.matches(question);
+        const ptQuestion = keepOriginal ? question : i18n.toPortugueseQuestion(question);
         content.innerHTML = answer(i18n.get() === 'en' ? question : ptQuestion);
       } catch (_) { /* Preserve the original result when data are unavailable. */ }
       if (followups) content.append(followups);

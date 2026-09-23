@@ -1,5 +1,5 @@
-/* Only the interface and question builder are translated here. Responses are
-   rendered by locale-answers.js, follow-ups by locale-followups.js. */
+/* Translate interface and question builder; switch PT/EN with one tap.
+   Responses and follow-up suggestions keep their own localization pipeline. */
 (() => {
   'use strict';
   const i18n = window.SCIi18n;
@@ -39,9 +39,7 @@
     const value = node.nodeValue;
     let source = textSources.get(node);
     if (!source || (value !== source.pt && value !== source.en)) {
-      // Other scripts can add a state suffix such as (SP) after a question
-      // was translated. Respect that change rather than reinstating stale
-      // text and entering a loop with the state-labeling observer.
+      // Other scripts may append a state suffix such as (SP).
       const alreadyEnglish = /^(?:Which|What|Compare|How|Show|List)\b/i.test(value.trim());
       source = alreadyEnglish
         ? { pt: i18n.toPortugueseQuestion(value), en: value }
@@ -79,30 +77,15 @@
     }
   }
 
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'sci-language-toggle';
+  toggle.innerHTML = '<span class="sci-language-current">PT</span>';
   const control = document.createElement('div');
   control.className = 'sci-language-control';
-  control.innerHTML = '<button type="button" class="sci-language-toggle" aria-label="Idioma / Language" aria-controls="sci-language-menu" aria-expanded="false" aria-haspopup="true"><span class="sci-language-current">PT</span><span aria-hidden="true">⌄</span></button>' +
-    '<div id="sci-language-menu" class="sci-language-menu" role="group" aria-label="Idioma / Language" hidden>' +
-    '<button type="button" data-language="pt" lang="pt-BR">Português</button>' +
-    '<button type="button" data-language="en" lang="en">English</button></div>';
+  control.append(toggle);
   header.insertBefore(control, theme);
-  const toggle = control.querySelector('.sci-language-toggle');
-  const menu = control.querySelector('.sci-language-menu');
-  const current = control.querySelector('.sci-language-current');
-  function openMenu(open) {
-    menu.hidden = !open;
-    toggle.setAttribute('aria-expanded', String(open));
-  }
-  toggle.addEventListener('click', () => openMenu(menu.hidden));
-  document.addEventListener('click', event => {
-    if (!control.contains(event.target)) openMenu(false);
-  });
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !menu.hidden) {
-      openMenu(false);
-      toggle.focus({ preventScroll: true });
-    }
-  });
+  const current = toggle.querySelector('.sci-language-current');
 
   function refreshConversation() {
     if (!window.state?.ready || submit?.disabled) return;
@@ -115,14 +98,12 @@
       const followups = content.querySelector('.follow-up-suggestions');
       if (followups) followups.remove();
       try {
-        // Preserve original input for both scope warnings and valid municipal
-        // requests with an implicit production indicator. Converting the latter
-        // could lose the intended comparison or the requested ranking size.
+        // Keep the original input for warnings and implicit-production requests.
         const isScopeWarning = !!content.querySelector('.sci-scope-actions');
         const keepOriginal = isScopeWarning || window.SCIimplicitProduction?.matches(question);
         const ptQuestion = keepOriginal ? question : i18n.toPortugueseQuestion(question);
         content.innerHTML = answer(i18n.get() === 'en' ? question : ptQuestion);
-      } catch (_) { /* Preserve the original result when data are unavailable. */ }
+      } catch (_) { /* Preserve the original result if the data are unavailable. */ }
       if (followups) content.append(followups);
     }
   }
@@ -133,10 +114,11 @@
     try {
       const language = i18n.get();
       if (current.textContent !== language.toUpperCase()) current.textContent = language.toUpperCase();
-      for (const button of control.querySelectorAll('[data-language]')) {
-        const selected = String(button.dataset.language === language);
-        if (button.getAttribute('aria-pressed') !== selected) button.setAttribute('aria-pressed', selected);
-      }
+      const destination = language === 'pt' ? 'en' : 'pt';
+      const label = destination === 'en' ? 'Switch to English' : 'Mudar para português';
+      toggle.setAttribute('aria-label', label);
+      toggle.setAttribute('title', label);
+      toggle.setAttribute('lang', language === 'en' ? 'en' : 'pt-BR');
       for (const selector of ['.brand-copy', '#home-hero > h1', '#home-hero > p',
         '#loading-card', '#new-chat', '#theme-toggle', '#question-builder-toggle',
         '#question-form', '#question-builder-panel', '#suggestions']) {
@@ -146,16 +128,12 @@
     } finally { inRefresh = false; }
   }
 
-  for (const button of control.querySelectorAll('[data-language]')) {
-    button.addEventListener('click', () => {
-      if (button.dataset.language !== i18n.get()) {
-        i18n.set(button.dataset.language);
-        refresh(true);
-      }
-      openMenu(false);
-      toggle.focus({ preventScroll: true });
-    });
-  }
+  toggle.addEventListener('click', () => {
+    i18n.set(i18n.get() === 'pt' ? 'en' : 'pt');
+    refresh(true);
+    // locale-followups.js listens to this event to translate existing cards.
+    toggle.dispatchEvent(new CustomEvent('sci:language-changed', { bubbles: true }));
+  });
 
   conversation.addEventListener('click', event => {
     if (i18n.get() !== 'en') return;
@@ -172,8 +150,8 @@
     }
   }, true);
 
-  // Crucial: do not observe #conversation. Its streaming words, suggestions
-  // and state abbreviations must never trigger another interface repaint.
+  // Do not observe #conversation: streaming words and UF suffixes must not
+  // trigger another interface render or start a mutation loop.
   const observer = new MutationObserver(records => {
     if (!inRefresh && records.length) refresh();
   });

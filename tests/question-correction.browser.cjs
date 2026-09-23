@@ -52,6 +52,7 @@ test('two misspelled cities require only two searchable dropdowns and explicit c
     await start(page);
     const repair = await ask(page, 'Compare Aroracuara com Pirossacaba em 2024');
     assert.equal(await repair.locator('.sci-repair-combobox').count(), 2);
+    assert.match(await repair.locator('.sci-repair-diagnosis').innerText(), /dois municípios|both names/i);
     assert.equal(await repair.locator('.sci-repair-city-search').count(), 0);
     assert.equal(await repair.locator('.sci-repair-combobox-menu:visible').count(), 0);
     await choose(repair, 0, 'Arara', 'Araraquara');
@@ -61,6 +62,21 @@ test('two misspelled cities require only two searchable dropdowns and explicit c
     await waitForResponse(page, 2);
     assert.match(await page.locator('.message.user').last().innerText(), /Compare Araraquara com Piracicaba em 2024/);
     assert.equal(await page.locator('.chat-response').last().locator('.data-table tbody tr').count(), 2);
+  } finally { await browser.close(); }
+});
+
+
+test('repair message points to the specific second municipality when only it is misspelled', async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  try {
+    await start(page);
+    const repair = await ask(page, 'Compare Araraquara com Pirossacaba em 2024');
+    const diagnostic = await repair.locator('.sci-repair-diagnosis').innerText();
+    assert.match(diagnostic, /segundo município/i);
+    assert.match(diagnostic, /Pirossacaba/);
+    assert.match(diagnostic, /erro de digitação/i);
+    assert.equal(await repair.locator('.sci-repair-combobox').count(), 1);
   } finally { await browser.close(); }
 });
 
@@ -74,6 +90,17 @@ test('one city dropdown offers similar places, full searchable index and the ran
     assert.equal(await repair.locator('.sci-repair-city-search').count(), 0);
     const box = repair.locator('.sci-repair-combobox').first();
     await box.locator('.sci-repair-combobox-trigger').click();
+    const alignment = await box.evaluate(node => {
+      const trigger = node.querySelector('.sci-repair-combobox-trigger').getBoundingClientRect();
+      const arrow = node.querySelector('.sci-repair-combobox-arrow').getBoundingClientRect();
+      const style = getComputedStyle(node.querySelector('.sci-repair-combobox-arrow'));
+      return {
+        delta: Math.abs((trigger.top + trigger.height / 2) - (arrow.top + arrow.height / 2)),
+        transform: style.transform
+      };
+    });
+    assert.ok(alignment.delta < 1.5, `chevron must be vertically centered; delta=${alignment.delta}`);
+    assert.notEqual(alignment.transform, 'none', 'open chevron must rotate around its center');
     assert.ok(await box.locator('.sci-repair-combobox-option').filter({ hasText: /Ranking dos municípios/ }).count());
     assert.ok(await box.locator('.sci-repair-combobox-option').filter({ hasText: 'Piracicaba' }).count());
     await box.locator('.sci-repair-combobox-search').fill('ribei');

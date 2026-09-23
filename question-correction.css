@@ -87,3 +87,9 @@
   min-width: 170px;
   margin-top: 2px;
 }
+
+/* Keep the repair title green, while bolding the exact faulty field/value in normal text color. */
+.conversation .message.assistant .sci-repair-diagnosis strong {
+  color: var(--text);
+  font-weight: 750;
+}

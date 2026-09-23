@@ -22,7 +22,7 @@
     const parts = source.match(/^(\s*)([\s\S]*?)(\s*)$/);
     const core = parts[2];
     let output = dictionary[core];
-    if (!output && /^(?:Qual|Quais|Compare a)\b/i.test(core)) {
+    if (!output && /^(?:Qual|Quais|Compare a|Como foi a)\b/i.test(core)) {
       output = i18n.toEnglishQuestion(core);
     }
     if (!output) {

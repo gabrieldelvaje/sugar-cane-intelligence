@@ -65,7 +65,7 @@
     const arrow = document.createElement('span');
     arrow.className = 'sci-repair-combobox-arrow';
     arrow.setAttribute('aria-hidden', 'true');
-    arrow.textContent = '⌄';
+    arrow.innerHTML = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5.25 7.75 10 12.25l4.75-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
     trigger.append(label, arrow);
     const menu = document.createElement('div');
     menu.className = 'sci-repair-combobox-menu';

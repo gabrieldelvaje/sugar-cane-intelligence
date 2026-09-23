@@ -88,6 +88,7 @@
     for (const match of question.matchAll(/\b\d{2,5}\b/g)) {
       const before = norm(question.slice(0, match.index));
       if (!/\b(?:em|no|ano|de|entre|ate|a|in|year|from|between|to)\s*$/.test(before)) continue;
+      if (/^\s*mil\b/i.test(question.slice(match.index + match[0].length))) continue;
       const original = match[0];
       const year = Number(original);
       if (original.length === 4 && year >= 1974 && year <= 2024) continue;

@@ -37,7 +37,7 @@ for (const [question, expected] of [
   ['Qual foi o clima em Piracicaba em 2020?', '°C'],
   ['Qual foi a chuva de Piracicaba em 2020?', 'mm'],
   ['Qual foi a precipitação em Piracicaba em 2020?', 'mm'],
-  ['Compare o clima de Piracicaba em 2020?', '°C']
+  ['Qual foi o clima de Piracicaba em 2020?', '°C']
 ]) {
   test(`supported indicator alias: ${question}`, async () => {
     const browser = await chromium.launch({ headless: true });

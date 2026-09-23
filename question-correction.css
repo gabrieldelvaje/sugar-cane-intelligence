@@ -1,0 +1,75 @@
+/* A correction is a guided choice, not an unrelated-topic warning. */
+.conversation .message.assistant .error.sci-repair-intro {
+  padding: 19px 24px 20px 26px;
+  border: 1px solid var(--line);
+  border-radius: 16px 54px 54px 50px;
+  background: var(--surface2);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 14px;
+}
+.conversation .message.assistant .error.sci-repair-intro strong {
+  color: var(--brand);
+  font-weight: 700;
+}
+.conversation .message.assistant .sci-repair-actions {
+  display: grid;
+  gap: 12px;
+  max-width: 740px;
+  margin-top: 12px;
+  padding: 0 0 4px;
+}
+.conversation .message.assistant .sci-repair-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.conversation .message.assistant .sci-repair-select,
+.conversation .message.assistant .sci-repair-city-search {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  font: inherit;
+  font-weight: 400;
+}
+.conversation .message.assistant .sci-repair-city-search {
+  margin-top: 3px;
+}
+.conversation .message.assistant .sci-repair-select:focus-visible,
+.conversation .message.assistant .sci-repair-city-search:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.conversation .message.assistant .sci-repair-actions .sci-repair-apply {
+  width: fit-content;
+  max-width: 100%;
+  padding: 11px 18px;
+  color: var(--bg);
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 700;
+}
+.conversation .message.assistant .sci-repair-actions .sci-repair-apply:hover {
+  color: var(--bg);
+  background: var(--brand);
+  filter: brightness(.94);
+}
+.conversation .message.assistant .sci-repair-feedback:not([hidden]) {
+  color: var(--danger);
+}
+@media (max-width: 650px) {
+  .conversation .message.assistant .error.sci-repair-intro {
+    padding: 18px 21px 20px 24px;
+  }
+}

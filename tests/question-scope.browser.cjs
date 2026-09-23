@@ -11,8 +11,6 @@ const sampleRows = [
 ];
 
 async function start(page, language = 'pt') {
-  // Use a small, deterministic slice of the actual row schema to avoid a huge
-  // network download and verify the real DOM, send handler and answer wrapper.
   await page.route('**/Bases/**', route => route.abort());
   await page.route('**/cdn.jsdelivr.net/**', route => route.abort());
   await page.goto(URL, { waitUntil: 'domcontentloaded' });
@@ -27,21 +25,21 @@ async function start(page, language = 'pt') {
 async function ask(page, question) {
   await page.locator('#question').fill(question);
   await page.locator('#question-form button[type="submit"]').click();
-  // The existing chat animates the user, typing dots and streamed response.
   await page.waitForFunction(() => {
     const send = document.querySelector('#question-form button[type="submit"]');
     return !send.disabled && !!document.querySelector('.chat-response:last-child');
   }, { timeout: 15000 });
-  // Freeze the response index. A lazy `.last()` locator would start pointing
-  // to a different answer as soon as another question was submitted.
   const index = await page.locator('.chat-response').count() - 1;
   return page.locator('.chat-response').nth(index);
 }
 
 async function switchLanguage(page, locale) {
+  const before = await page.evaluate(() => window.SCIi18n.get());
+  assert.notEqual(before, locale, 'each toggle click must switch to the other language');
   await page.locator('.sci-language-toggle').click();
-  await page.locator(`.sci-language-menu [data-language="${locale}"]`).click();
   await page.waitForFunction(expected => window.SCIi18n.get() === expected, locale);
+  assert.equal(await page.locator('.sci-language-current').innerText(), locale.toUpperCase());
+  assert.equal(await page.locator('.sci-language-menu').count(), 0);
 }
 
 for (const locale of ['pt', 'en']) {

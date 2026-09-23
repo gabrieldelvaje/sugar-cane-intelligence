@@ -1,23 +1,29 @@
 /* Clear, non-blocking guidance when a question cannot be analyzed.
    Uses theme variables so it works in light and dark mode. */
-/* Mirror the farmer bubble: the upper-left is the soft tip, while the
-   lower-left radius is 25% smaller than the rounded right corners.
-   Finite radii stay balanced even when a warning spans several lines. */
+/* Mirror the farmer bubble: the upper-left is a soft tip; the lower-left
+   sits halfway between the old 42px and 56px radii. The other corners
+   remain round without squeezing text against the curved edges. */
 .conversation .message.assistant .error {
-  border-radius: 14px 56px 56px 42px;
+  border-radius: 16px 64px 64px 49px;
 }
 .conversation .message.assistant .error:has(+ .sci-scope-actions) {
-  padding: 14px 17px;
+  padding: 22px 30px 24px 32px;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
-  border-radius: 14px 56px 56px 42px;
+  border-radius: 16px 64px 64px 49px;
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 10%, var(--bg));
-  line-height: 1.55;
+  line-height: 1.6;
   font-size: 14px;
   font-weight: 450;
 }
 .conversation .message.assistant .error:has(+ .sci-scope-actions) strong {
   font-weight: 550;
+}
+/* Keep comfortable text insets without crowding narrow phone screens. */
+@media (max-width: 650px) {
+  .conversation .message.assistant .error:has(+ .sci-scope-actions) {
+    padding: 19px 23px 21px 26px;
+  }
 }
 .conversation .message.assistant .sci-scope-actions {
   display: grid;

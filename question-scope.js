@@ -176,8 +176,8 @@
   function guidance(reason) {
     const language = window.SCIi18n?.get() === 'en' ? 'en' : 'pt';
     const strings = copy[language];
-    const buttons = examples[language].map(question =>
-      `<button type="button" class="sci-scope-example" data-sci-scope-example="${escapeAttr(question)}">${question}</button>`
+    const buttons = examples[language].map((question, index) =>
+      `<button type="button" class="sci-scope-example${index === 0 ? ' sci-capability-suggestion' : ''}" data-sci-scope-example="${escapeAttr(question)}">${question}</button>`
     ).join('');
     return `<div class="error"><strong>${strings[reason === 'format' ? 'format' : 'topic']}</strong></div>` +
       `<div class="sci-scope-actions"><p>${strings.hint}</p>` + buttons +

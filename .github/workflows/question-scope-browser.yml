@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'question-scope.js'
+      - 'chat-ui-v5.js'
       - 'dynamic-questions.js'
       - 'styles.css'
       - 'locale-ui-dictionary.js'

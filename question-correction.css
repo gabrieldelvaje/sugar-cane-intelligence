@@ -69,3 +69,21 @@
     padding: 18px 21px 20px 24px;
   }
 }
+
+.conversation .message.assistant .sci-year-range-help {
+  display: grid;
+  gap: 9px;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.conversation .message.assistant .sci-year-range-help > p {
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.conversation .message.assistant .sci-year-range-help .sci-scope-builder {
+  width: fit-content;
+  min-width: 170px;
+  margin-top: 2px;
+}

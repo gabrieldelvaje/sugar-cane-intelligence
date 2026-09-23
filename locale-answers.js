@@ -140,7 +140,7 @@
   function translateChartAndMetrics(root, key) {
     const old = info[key].label;
     const nice = labels[key];
-    root.querySelectorAll('.kpi strong, .data-table td.number, .ranking-bar-value, .historical-point')
+    root.querySelectorAll('.kpi:not(.historical-trend-kpi) strong, .data-table td.number, .ranking-bar-value, .historical-point')
       .forEach(element => {
         if (element.matches('.historical-point')) {
           if (element.dataset.value) element.dataset.value = numberTextEn(element.dataset.value);

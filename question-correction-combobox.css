@@ -173,3 +173,7 @@
     max-height: min(260px, 43dvh);
   }
 }
+/* Override the generic scope-action pill radius: dropdown choices are flat rows. */
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option {
+  border-radius: 0;
+}

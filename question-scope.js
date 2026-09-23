@@ -11,7 +11,7 @@
   const questionIntent = /\b(?:qual|quais|quanto|quantos|compare|comparar|comparacao|ranking|rank|top|maior|maiores|menor|menores|media|historica|historico|evolucao|serie|mostrar|mostre|liste|listar|dados|which|what|how|compare|comparison|rank|ranking|top|highest|lowest|largest|biggest|average|historical|show|list|data|trend)\b/;
   const rankingIntent = /\b(?:municipios?|cidades?|municipalities|cities|ranking|rank|top|maior|maiores|menor|menores|lider|leading|highest|lowest|largest|biggest)\b/;
   const compareIntent = /\b(?:compar(?:e|ar|acao)|comparison|versus|vs|difference between)\b/;
-  const unsupportedTopic = /\b(?:jogos?|partidas?|placar|futebol|basquete|campeonatos?|gols?|soccer|football|basketball|matches|match|scores?|filmes?|movies?|musicas?|songs?|eleicoes?|elections?|lot[eo]ria|lottery|populacao|population|habitantes?|pib|gdp|renda|income|criminalidade|crimes?|desemprego|unemployment|precos?|prices?)\b/;
+  const unsupportedTopic = /\b(?:jogos?|partidas?|placar|futebol|basquete|campeonatos?|gols?|games?|soccer|football|basketball|matches|match|scores?|filmes?|movies?|musicas?|songs?|eleicoes?|elections?|lot[eo]ria|lottery|populacao|population|habitantes?|pib|gdp|renda|income|criminalidade|crimes?|desemprego|unemployment|precos?|prices?)\b/;
   const unspecifiedClimate = /\b(?:clima|climate|weather|previsao|forecast)\b/;
   const livePeriod = /\b(?:hoje|ontem|amanha|agora|neste momento|tempo real|today|yesterday|tomorrow|right now|live|real time|this week|esta semana)\b/;
   const numberWords = Object.freeze({
@@ -38,13 +38,23 @@
     const raw = String(question ?? '').trim();
     const text = normalize(raw);
     if (!text || unsupportedTopic.test(text)) return 'topic';
+
+    const cities = cityNames(raw);
+    const hasMetric = measurable.test(text);
+    if (!hasMetric) {
+      // Out-of-topic questions stay out-of-topic even if they mention a date
+      // such as "yesterday". Only supported municipal intents are allowed to
+      // infer sugarcane production; unspecified climate still needs a metric.
+      const implicitComparison = compareIntent.test(text) && cities.length >= 2;
+      if (!implicitComparison && !rankRequest(text) && !unspecifiedClimate.test(text))
+        return compareIntent.test(text) && cities.length ? 'format' : 'topic';
+    }
     if (livePeriod.test(text)) return 'format';
 
     const years = [...raw.matchAll(/\b(?:19\d{2}|20\d{2})\b/g)].map(match => Number(match[0]));
     if (years.some(year => year < 1974 || year > 2024)) return 'format';
 
-    const cities = cityNames(raw);
-    if (!measurable.test(text)) {
+    if (!hasMetric) {
       // Explicitly requested climate without a defined indicator is still
       // ambiguous; do not silently interpret it as agricultural production.
       if (unspecifiedClimate.test(text)) return 'format';

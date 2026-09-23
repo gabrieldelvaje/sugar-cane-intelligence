@@ -7,3 +7,12 @@
 .suggestions .sci-capability-suggestion{border-color:color-mix(in srgb,var(--brand) 48%,var(--line));background:color-mix(in srgb,var(--brand) 9%,var(--surface));color:var(--brand);font-weight:700;position:relative;padding-right:42px}
 .suggestions .sci-capability-suggestion:after{content:'✦';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:15px}
 .suggestions .sci-capability-suggestion:hover,.suggestions .sci-capability-suggestion:focus-visible{background:color-mix(in srgb,var(--brand) 14%,var(--surface));border-color:var(--brand)}
+
+.historical-trend-line{stroke-width:2.25;stroke-dasharray:8 6;stroke-linecap:round;opacity:.78}
+.historical-trend-key{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;margin-left:2px}
+.historical-trend-key i{display:inline-block;width:22px;height:0;margin:0;border-top:2px dashed currentColor;background:none}
+.historical-trend-value{display:inline-flex;align-items:center;gap:5px;font-weight:700;white-space:nowrap;color:var(--text)}
+.historical-trend-cell{text-align:center!important}
+.historical-trend-column{text-align:center!important}
+.historical-trend-kpi strong{font-size:17px}
+@media(max-width:650px){.historical-trend-key{display:flex;margin-top:7px;margin-left:0}.historical-trend-cell{min-width:104px}}

@@ -103,3 +103,19 @@
 .conversation .message.assistant .sci-capability-overview li.chat-stream-marker-pending::marker{
   color:transparent;
 }
+
+/* Keep off-topic suggestions in the same two-column layout as normal follow-ups.
+   Scope only the top-level pair; repair dropdowns and builder-only actions stay unchanged. */
+.conversation .message.assistant .sci-scope-actions:has(> .sci-scope-example) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 100%;
+}
+.conversation .message.assistant .sci-scope-actions:has(> .sci-scope-example) > p,
+.conversation .message.assistant .sci-scope-actions:has(> .sci-scope-example) > .sci-scope-builder {
+  grid-column: 1 / -1;
+}
+@media (max-width: 650px) {
+  .conversation .message.assistant .sci-scope-actions:has(> .sci-scope-example) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

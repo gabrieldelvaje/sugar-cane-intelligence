@@ -115,7 +115,12 @@
       const followups = content.querySelector('.follow-up-suggestions');
       if (followups) followups.remove();
       try {
-        const ptQuestion = i18n.toPortugueseQuestion(question);
+        // Scope warnings already represent an invalid question. Preserve the
+        // exact original input when changing languages; converting an English
+        // greeting or unrelated question into Portuguese would otherwise
+        // manufacture a sugarcane-production request and replace the warning.
+        const isScopeWarning = !!content.querySelector('.sci-scope-actions');
+        const ptQuestion = isScopeWarning ? question : i18n.toPortugueseQuestion(question);
         content.innerHTML = answer(i18n.get() === 'en' ? question : ptQuestion);
       } catch (_) { /* Preserve the original result when data are unavailable. */ }
       if (followups) content.append(followups);

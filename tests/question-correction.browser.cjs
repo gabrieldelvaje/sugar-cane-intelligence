@@ -134,6 +134,41 @@ test('metric typo and incomplete year each use a single searchable menu', async 
   } finally { await browser.close(); }
 });
 
+
+test('four-digit years outside coverage explain 1974–2024 and still offer a year selector plus help', async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  try {
+    await start(page);
+    for (const year of ['1970', '2026']) {
+      const repair = await ask(page, `Qual a precipitação em Piracicaba em ${year}?`);
+      const diagnostic = await repair.locator('.sci-repair-diagnosis').innerText();
+      assert.match(diagnostic, /1974 a 2024/);
+      assert.match(diagnostic, new RegExp(year));
+      assert.equal(await repair.locator('.sci-repair-combobox').count(), 1);
+      assert.equal(await repair.locator('.sci-year-range-help .sci-scope-example').count(), 2);
+      assert.equal(await repair.locator('.sci-year-range-help .sci-scope-builder').count(), 1);
+    }
+  } finally { await browser.close(); }
+});
+
+test('malformed year numbers are treated as typos while 1980 remains a valid in-range year', async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  try {
+    await start(page);
+    for (const malformed of ['200', '20000', '20 mil']) {
+      const repair = await ask(page, `Qual a precipitação em Piracicaba em ${malformed}?`);
+      assert.match(await repair.locator('.sci-repair-diagnosis').innerText(), /digitado incorretamente/i);
+      assert.equal(await repair.locator('.sci-repair-combobox').count(), 1);
+      assert.equal(await repair.locator('.sci-year-range-help').count(), 0);
+    }
+    const valid = await ask(page, 'Qual a precipitação em Piracicaba em 1980?');
+    assert.equal(await valid.locator('.sci-repair-actions').count(), 0);
+    assert.doesNotMatch(await valid.innerText(), /1974 a 2024|digitado incorretamente/i);
+  } finally { await browser.close(); }
+});
+
 test('locale switch restores translated dropdowns while out-of-scope messages remain errors', async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });

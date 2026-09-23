@@ -115,27 +115,54 @@
 }
 .conversation .message.assistant .sci-repair-combobox-results {
   display: grid;
-  gap: 2px;
+  gap: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-top: 5px;
 }
 .conversation .message.assistant .sci-repair-combobox-option {
+  position: relative;
   width: 100%;
   min-height: 38px;
-  padding: 9px 10px;
+  padding: 9px 11px;
   border: 0;
-  border-radius: 9px;
+  border-bottom: 1px solid color-mix(in srgb,var(--line) 62%,transparent);
+  border-radius: 0;
   color: var(--text);
   background: transparent;
   text-align: left;
   font: inherit;
   cursor: pointer;
 }
+.conversation .message.assistant .sci-repair-combobox-option:last-child {
+  border-bottom: 0;
+}
 .conversation .message.assistant .sci-repair-combobox-option:hover,
-.conversation .message.assistant .sci-repair-combobox-option:focus-visible,
+.conversation .message.assistant .sci-repair-combobox-option:focus-visible {
+  background: color-mix(in srgb,var(--surface2) 62%,transparent);
+}
 .conversation .message.assistant .sci-repair-combobox-option[aria-selected="true"] {
-  background: var(--surface2);
+  font-weight: 650;
+}
+.conversation .message.assistant .sci-repair-combobox-option.is-recommended {
+  padding-left: 14px;
+  color: color-mix(in srgb,var(--brand) 88%,var(--text));
+  background: color-mix(in srgb,var(--brand) 9%,var(--bg));
+  font-weight: 650;
+}
+.conversation .message.assistant .sci-repair-combobox-option.is-recommended::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 5px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--brand);
+}
+.conversation .message.assistant .sci-repair-combobox-option.is-recommended:hover,
+.conversation .message.assistant .sci-repair-combobox-option.is-recommended:focus-visible {
+  background: color-mix(in srgb,var(--brand) 13%,var(--bg));
 }
 .conversation .message.assistant .sci-repair-combobox-empty {
   padding: 8px 10px;

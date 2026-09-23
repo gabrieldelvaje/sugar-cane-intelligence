@@ -211,11 +211,14 @@
       if (++checks < 150) window.setTimeout(refreshOpening, 200);
       return;
     }
-    const questions = generate(4);
-    if (questions.length === 4) {
-      [...initial.querySelectorAll('button')].slice(0, 4).forEach((button, i) => {
-        button.textContent = questions[i];
-      });
+    const buttons = [...initial.querySelectorAll('button')].slice(0, 4);
+    if (buttons.length < 4) return;
+    const language = window.SCIi18n?.get() === 'en' ? 'en' : 'pt';
+    buttons[0].textContent = language === 'en' ? 'What can you do?' : 'O que você pode fazer?';
+    buttons[0].classList.add('sci-capability-suggestion');
+    const questions = generate(3);
+    if (questions.length === 3) {
+      questions.forEach((question, i) => { buttons[i + 1].textContent = question; });
     }
   }
   refreshOpening();

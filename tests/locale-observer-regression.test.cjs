@@ -38,7 +38,11 @@ test('English follow-ups settle with their state abbreviation instead of locking
     'locale-ui-stable.js', 'locale-followups.js'
   ]) w.eval(source(file));
 
-  doc.querySelector('[data-language="en"]').click();
+  const toggle = doc.querySelector('.sci-language-toggle');
+  assert.equal(toggle.textContent, 'PT');
+  assert.equal(doc.querySelector('.sci-language-menu'), null);
+  toggle.click();
+  assert.equal(toggle.textContent, 'EN');
   const group = doc.createElement('div');
   group.className = 'follow-up-suggestions';
   group.innerHTML = '<p class="follow-up-label">Você também pode perguntar</p>' +
@@ -53,12 +57,12 @@ test('English follow-ups settle with their state abbreviation instead of locking
   assert.match(en, /^What was the yield /);
   assert.match(en, /Volta Redonda \(RJ\)/);
   assert.equal(group.querySelector('.follow-up-label').textContent, 'You can also ask');
-  assert.equal(doc.querySelector('.sci-language-current').textContent, 'EN');
   const settledAt = mutations;
   await pause(100);
   assert.equal(mutations, settledAt, 'text keeps being rewritten after it should have settled');
   assert.equal(doc.querySelector('#question-form button[type="submit"]').disabled, false);
-  doc.querySelector('[data-language="pt"]').click();
+  toggle.click();
+  assert.equal(toggle.textContent, 'PT');
   await pause(50);
   assert.match(group.querySelector('button').textContent, /^Qual foi a produtividade /);
   assert.match(group.querySelector('button').textContent, /Volta Redonda \(RJ\)/);

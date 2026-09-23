@@ -37,7 +37,9 @@ for (const [question, expected] of [
   ['Qual foi o clima em Piracicaba em 2020?', '°C'],
   ['Qual foi a chuva de Piracicaba em 2020?', 'mm'],
   ['Qual foi a precipitação em Piracicaba em 2020?', 'mm'],
-  ['Qual foi o clima de Piracicaba em 2020?', '°C']
+  ['Qual foi o clima de Piracicaba em 2020?', '°C'],
+  ['Como foi a temperatura em Piracicaba em 2020?', '°C'],
+  ['Como foi a chuva de Piracicaba em 2020?', 'mm']
 ]) {
   test(`supported indicator alias: ${question}`, async () => {
     const browser = await chromium.launch({ headless: true });
@@ -71,6 +73,34 @@ test('a genuinely misspelled temperature indicator offers correction instead of 
     await browser.close();
   }
 });
+
+for (const misspelling of ['temperatyra', 'temperatira']) {
+  test(`como foi with ${misspelling} offers a correction then returns temperature`, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+    try {
+      await start(page);
+      const original = `como foi a ${misspelling} de piracicaba?`;
+      const response = await ask(page, original);
+      assert.equal(await response.locator('.sci-repair-actions').count(), 1);
+      assert.match(await response.locator('.sci-repair-diagnosis').innerText(), new RegExp(misspelling, 'i'));
+      const box = response.locator('.sci-repair-combobox').first();
+      await box.locator('.sci-repair-combobox-trigger').click();
+      await box.locator('.sci-repair-combobox-option').filter({ hasText: 'temperatura média' }).click();
+      await response.locator('.sci-repair-apply').click();
+      const result = page.locator('.chat-response').last();
+      await page.waitForFunction(() =>
+        document.querySelectorAll('.chat-response').length >= 2 &&
+        !document.querySelector('#question-form button[type="submit"]').disabled,
+      null, { timeout: 20000 });
+      assert.equal(await result.locator('.error, .sci-repair-actions').count(), 0);
+      assert.match(await result.innerText(), /°C/);
+      assert.match(await page.locator('.message.user').first().innerText(), new RegExp(original.replace(/[?]/g, '\\?'), 'i'));
+    } finally {
+      await browser.close();
+    }
+  });
+}
 
 for (const [question, unit] of [
   ['What was the climate in Piracicaba in 2020?', '°C'],

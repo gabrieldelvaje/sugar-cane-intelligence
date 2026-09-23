@@ -83,16 +83,49 @@
   }
   function incorrectYears(question) {
     const result = [];
-    for (const match of question.matchAll(/\b\d{3,4}\b/g)) {
+    // Treat a normal four-digit year outside 1974–2024 as a coverage issue.
+    // Short/long numeric forms are probable typing mistakes instead.
+    for (const match of question.matchAll(/\b\d{2,5}\b/g)) {
       const before = norm(question.slice(0, match.index));
       if (!/\b(?:em|no|ano|de|entre|ate|a|in|year|from|between|to)\s*$/.test(before)) continue;
-      const year = Number(match[0]);
-      if (match[0].length === 4 && year >= 1974 && year <= 2024) continue;
-      if (match[0].length === 3 && !/\b(?:em|no|ano|in|year|entre|between|de|from)\s*$/.test(before)) continue;
-      let suggested = match[0].length === 3 ? Number(match[0] + '0') : year;
+      const original = match[0];
+      const year = Number(original);
+      if (original.length === 4 && year >= 1974 && year <= 2024) continue;
+
+      const issue = original.length === 4 ? 'range' : 'typo';
+      let suggested = year;
+
+      if (issue === 'typo') {
+        if (original.length === 3) suggested = Number(original + '0');
+        else if (original.length === 5 && original.endsWith('0')) suggested = Number(original.slice(0, -1));
+        else if (original.length === 2) suggested = Number(original + '00');
+      }
+
       if (!years.includes(suggested)) suggested = years.reduce((best, candidate) =>
         Math.abs(candidate - suggested) < Math.abs(best - suggested) ? candidate : best, years[0]);
-      result.push({ kind: 'year', original: match[0], values: [suggested, ...years.filter(value => value !== suggested)].map(String) });
+
+      result.push({
+        kind: 'year',
+        issue,
+        original,
+        values: [suggested, ...years.filter(value => value !== suggested)].map(String)
+      });
+    }
+
+    // Also recognize natural-language "20 mil" as a malformed year when it
+    // appears in a year position.
+    for (const match of question.matchAll(/\b20\s+mil\b/giu)) {
+      const before = norm(question.slice(0, match.index));
+      if (!/\b(?:em|no|ano|de|entre|ate|a|in|year|from|between|to)\s*$/.test(before)) continue;
+      if (result.some(item => item.original === match[0])) continue;
+      const suggested = years.includes(2000) ? 2000 : years.reduce((best, candidate) =>
+        Math.abs(candidate - 2000) < Math.abs(best - 2000) ? candidate : best, years[0]);
+      result.push({
+        kind: 'year',
+        issue: 'typo',
+        original: match[0],
+        values: [suggested, ...years.filter(value => value !== suggested)].map(String)
+      });
     }
     return result;
   }
@@ -170,10 +203,16 @@
       bothCities: 'Não consegui identificar os dois municípios informados. Parece haver erros de digitação.',
       metricTypo: 'O indicador informado parece ter um erro de digitação.',
       yearProblem: 'O ano informado não corresponde a um ano válido da base.',
+      yearRange: 'O ano informado está fora da cobertura da base. Os dados disponíveis compreendem o período de 1974 a 2024.',
+      yearTypo: 'O valor informado parece ser um ano digitado incorretamente.',
       missingLocation: 'Falta informar qual município você quer analisar.',
       missingMetric: 'Não consegui identificar qual indicador você quer analisar.',
       confirmMetric: 'Confirme também o indicador antes de continuar.',
-      fallbackProblem: 'Encontrei uma parte da pergunta que precisa ser corrigida.' },
+      fallbackProblem: 'Encontrei uma parte da pergunta que precisa ser corrigida.',
+      yearHelp: 'Escolha um ano disponível no menu ou experimente uma destas opções:',
+      yearExample1: 'Qual município teve maior produção de cana em 2024?',
+      yearExample2: 'Qual foi a precipitação em Piracicaba em 2000?',
+      builder: 'Montar minha pergunta' },
     en: { title: 'Let’s correct your question', hint: 'Choose the options below. I will only analyze the corrected question after you confirm.',
       metric: 'Indicator', city: 'Municipality', first: 'First municipality', second: 'Second municipality', year: 'Year',
       choose: 'Choose an option', search: 'Search another municipality…', submit: 'Analyze corrected question',
@@ -183,10 +222,16 @@
       bothCities: 'I could not identify either municipality. There may be typos in both names.',
       metricTypo: 'The indicator appears to contain a typo.',
       yearProblem: 'The year does not match a valid year in the dataset.',
+      yearRange: 'The year is outside the dataset coverage. Available data covers 1974 to 2024.',
+      yearTypo: 'The value looks like a mistyped year.',
       missingLocation: 'The municipality to analyze is missing.',
       missingMetric: 'I could not identify which indicator you want to analyze.',
       confirmMetric: 'Please also confirm the indicator before continuing.',
-      fallbackProblem: 'I found a part of the question that needs to be corrected.' }
+      fallbackProblem: 'I found a part of the question that needs to be corrected.',
+      yearHelp: 'Choose an available year from the menu or try one of these options:',
+      yearExample1: 'Which municipality had the highest sugarcane production in 2024?',
+      yearExample2: 'What was the rainfall in Piracicaba in 2000?',
+      builder: 'Build my question' }
   };
   function diagnosis(detection, language) {
     const s = copy[language];
@@ -215,9 +260,19 @@
     const yearRepair = repairs.find(repair => repair.kind === 'year');
     if (yearRepair) {
       const quoted = yearRepair.original ? ` “${yearRepair.original}”` : '';
-      pieces.push(language === 'en'
-        ? `${s.yearProblem}${quoted ? ` I found${quoted}.` : ''}`
-        : `${s.yearProblem}${quoted ? ` Encontrei${quoted}.` : ''}`);
+      if (yearRepair.issue === 'range') {
+        pieces.push(language === 'en'
+          ? `${s.yearRange}${quoted ? ` You entered${quoted}.` : ''}`
+          : `${s.yearRange}${quoted ? ` Você informou${quoted}.` : ''}`);
+      } else if (yearRepair.issue === 'typo') {
+        pieces.push(language === 'en'
+          ? `${s.yearTypo}${quoted ? ` I found${quoted}.` : ''}`
+          : `${s.yearTypo}${quoted ? ` Encontrei${quoted}.` : ''}`);
+      } else {
+        pieces.push(language === 'en'
+          ? `${s.yearProblem}${quoted ? ` I found${quoted}.` : ''}`
+          : `${s.yearProblem}${quoted ? ` Encontrei${quoted}.` : ''}`);
+      }
     }
 
     if (repairs.some(repair => repair.kind === 'location')) pieces.push(s.missingLocation);
@@ -251,11 +306,18 @@
     // An exact class="error" allows the existing streaming controller to
     // suppress unrelated follow-up suggestions without changing that controller.
     const problem = diagnosis(detection, language);
+    const hasYearRange = detection.repairs.some(repair => repair.kind === 'year' && repair.issue === 'range');
+    const yearHelp = hasYearRange
+      ? `<div class="sci-year-range-help"><p>${html(s.yearHelp)}</p>` +
+        `<button type="button" class="sci-scope-example" data-sci-scope-example="${html(s.yearExample1)}">${html(s.yearExample1)}</button>` +
+        `<button type="button" class="sci-scope-example" data-sci-scope-example="${html(s.yearExample2)}">${html(s.yearExample2)}</button>` +
+        `<button type="button" class="sci-scope-builder">${html(s.builder)}</button></div>`
+      : '';
     return `<div class="error"><div class="sci-repair-intro"><strong>${html(s.title)}</strong><br><span class="sci-repair-diagnosis">${html(problem)}</span><br>${html(s.hint)}</div></div>` +
       `<div class="sci-scope-actions sci-repair-actions">` +
       detection.repairs.map((repair, index) => field(repair, index, language)).join('') +
       '<p class="sci-repair-feedback" role="status" hidden></p>' +
-      `<button type="button" class="sci-repair-apply">${html(s.submit)}</button></div>`;
+      `<button type="button" class="sci-repair-apply">${html(s.submit)}</button>${yearHelp}</div>`;
   }
   answer = function correctedAnswer(question) {
     const candidate = detect(String(question ?? ''));

@@ -1,13 +1,9 @@
-/* The light question builder uses a lighter neutral window with distinctly
-   darker neutral choices and inputs. The dark palette and slide motion stay intact. */
+/* Match the light question builder to the home screen's existing palette.
+   Use shared theme tokens so the builder stays in sync with initial suggestions.
+   Only light mode is affected; keep dark mode and slide motion unchanged. */
 :root:not([data-theme="dark"]) .question-builder-panel {
-  --qb-light-panel: #e9ebee;
-  --qb-light-card: #d5dae1;
-  --qb-light-hover: #c5ccd5;
-  --qb-light-border: #b9c0c9;
-  background-color: var(--qb-light-panel);
-  /* A visible but low-contrast outer outline; inner control borders stay defined. */
-  border: 2px solid #c7cdd5;
+  background-color: var(--bg);
+  border: 2px solid var(--line);
   box-shadow: none;
 }
 
@@ -19,9 +15,10 @@
   .qb-wizard-nav,
   .qb-footer
 ) {
-  background-color: var(--qb-light-panel);
+  background-color: var(--bg);
 }
 
+/* The option cards use the same surface and border as initial suggestions. */
 :root:not([data-theme="dark"]) .question-builder-panel :is(
   .qb-close,
   .qb-action:not([aria-pressed="true"]),
@@ -35,8 +32,8 @@
   .qb-city-results,
   .qb-wizard-results
 ) {
-  background-color: var(--qb-light-card);
-  border-color: var(--qb-light-border);
+  background-color: var(--surface);
+  border-color: var(--line);
 }
 
 :root:not([data-theme="dark"]) .question-builder-panel :is(
@@ -47,7 +44,15 @@
   .qb-city-results button:hover,
   .qb-wizard-results button:hover
 ) {
-  background-color: var(--qb-light-hover);
+  background-color: var(--surface2);
+}
+
+/* Preserve the green selection outline, as on the home screen's suggestions. */
+:root:not([data-theme="dark"]) .question-builder-panel :is(
+  .qb-wizard-choice:hover,
+  .qb-wizard-choice[aria-pressed="true"]
+) {
+  border-color: var(--brand);
 }
 
 :root:not([data-theme="dark"]) .question-builder-panel :is(
@@ -55,5 +60,5 @@
   .qb-wizard-nav,
   .qb-footer
 ) {
-  border-color: var(--qb-light-border);
+  border-color: var(--line);
 }

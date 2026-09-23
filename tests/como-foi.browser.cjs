@@ -67,7 +67,7 @@ test('Como foi suggestions translate to What was without losing the Portuguese o
         portuguese: window.SCIi18n.toPortugueseQuestion(original)
       };
     });
-    assert.equal(translated.english, 'What was the temperatura in Piracicaba in 2020?'.replace('temperatura', 'temperature'));
+    assert.equal(translated.english, 'What was the average temperature in Piracicaba in 2020?');
     assert.equal(translated.portuguese, 'Como foi a temperatura em Piracicaba em 2020?');
   } finally { await browser.close(); }
 });

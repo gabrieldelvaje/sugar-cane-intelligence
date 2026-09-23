@@ -213,8 +213,9 @@
     }
     const buttons = [...initial.querySelectorAll('button')].slice(0, 4);
     if (buttons.length < 4) return;
-    const language = window.SCIi18n?.get() === 'en' ? 'en' : 'pt';
-    buttons[0].textContent = language === 'en' ? 'What can you do?' : 'O que você pode fazer?';
+    // Keep the source text in Portuguese. locale-ui-stable.js owns PT/EN
+    // translation, so repeated language toggles never reinterpret this prompt.
+    buttons[0].textContent = 'O que você pode fazer?';
     buttons[0].classList.add('sci-capability-suggestion');
     const questions = generate(3);
     if (questions.length === 3) {

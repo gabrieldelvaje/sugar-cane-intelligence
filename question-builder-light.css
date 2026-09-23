@@ -6,7 +6,8 @@
   --qb-light-hover: #c5ccd5;
   --qb-light-border: #b9c0c9;
   background-color: var(--qb-light-panel);
-  border-color: var(--qb-light-border);
+  /* Keep the outer outline subtle; inner control borders stay more defined. */
+  border: 1px solid #d7dce4;
   box-shadow: none;
 }
 

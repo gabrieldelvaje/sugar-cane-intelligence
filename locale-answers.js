@@ -151,6 +151,7 @@
       });
     root.querySelectorAll('.data-table th').forEach(cell => {
       if (cell.textContent.trim() === 'Município') cell.textContent = 'Municipality';
+      else if (cell.textContent.trim() === 'Tendência') cell.textContent = 'Trend';
       else if (cell.textContent.trim() === old) cell.textContent = nice[0].toUpperCase() + nice.slice(1);
     });
     root.querySelectorAll('.kpi span').forEach(span => {
@@ -158,6 +159,7 @@
       if (text === 'Média histórica') span.textContent = 'Historical average';
       else if (text === 'Maior valor') span.textContent = 'Highest value';
       else if (text === 'Último ano') span.textContent = 'Latest year';
+      else if (text === 'Tendência') span.textContent = 'Trend';
       else if (text.startsWith(old + ' em ')) span.textContent = nice[0].toUpperCase() + nice.slice(1) + ' in ' + text.slice(old.length + 4);
     });
     root.querySelectorAll('.ranking-chart-heading').forEach(header => {
@@ -173,11 +175,18 @@
     root.querySelectorAll('.historical-line-chart').forEach(chart => {
       const legend = chart.querySelector('.legend strong');
       if (legend) legend.textContent = nice[0].toUpperCase() + nice.slice(1) + ' by year';
+      const trendLabel = chart.querySelector('.historical-trend-label');
+      if (trendLabel) trendLabel.textContent = 'Linear trend';
       const svg = chart.querySelector('svg');
       if (svg) svg.setAttribute('aria-label', 'Historical series of ' + nice);
       chart.querySelectorAll('svg text.axis[text-anchor="end"]').forEach(label => {
         label.textContent = numberTextEn(label.textContent);
       });
+    });
+    root.querySelectorAll('.historical-trend-value').forEach(value => {
+      const direction = value.dataset.trend;
+      value.textContent = direction === 'up' ? '↗ Rising'
+        : direction === 'down' ? '↘ Declining' : '→ Stable';
     });
   }
 

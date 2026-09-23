@@ -8,6 +8,7 @@ on:
       - 'historical-line-charts.js'
       - 'locale-answers.js'
       - 'dynamic-questions.js'
+      - 'indicator-synonyms.js'
       - 'styles.css'
       - 'locale-ui-dictionary.js'
       - 'question-scope.css'
@@ -22,6 +23,7 @@ on:
       - 'tests/implicit-production.browser.cjs'
       - 'tests/question-correction.browser.cjs'
       - 'tests/historical-trend.browser.cjs'
+      - 'tests/indicator-synonyms.browser.cjs'
       - '.github/workflows/question-scope-browser.yml'
   workflow_dispatch:
 
@@ -47,5 +49,5 @@ jobs:
           done
           cat /tmp/sci-scope-http.log
           exit 1
-      - name: Check scope, implicit production, and searchable correction dropdowns
-        run: node --check question-correction.js && node --check question-correction-combobox.js && node --check historical-line-charts.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs tests/historical-trend.browser.cjs
+      - name: Check scope, indicators, and correction dropdowns
+        run: node --check indicator-synonyms.js && node --check question-correction.js && node --check question-correction-combobox.js && node --check historical-line-charts.js && node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs tests/question-correction.browser.cjs tests/historical-trend.browser.cjs tests/indicator-synonyms.browser.cjs

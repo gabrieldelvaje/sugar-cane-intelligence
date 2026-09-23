@@ -48,7 +48,7 @@ for (const [question, expected] of [
       await start(page);
       const response = await ask(page, question);
       assert.equal(await response.locator('.error, .sci-repair-actions').count(), 0);
-      const result = await response.innerText();
+      const result = await response.locator('.answer').innerText();
       assert.match(result, new RegExp(expected === '°C' ? '°C' : 'mm'));
       assert.doesNotMatch(result, /produção em Piracicaba|production in Piracicaba/i);
       assert.match(await page.locator('.message.user').last().innerText(), new RegExp(question.replace(/[?]/g, '\\?'), 'i'));
@@ -115,7 +115,6 @@ for (const [question, unit] of [
       assert.equal(await response.locator('.error, .sci-repair-actions').count(), 0);
       assert.match(await response.innerText(), new RegExp(unit));
     } finally {
-      await browser.close();
-    }
+      await browser.close(); }
   });
 }

@@ -39,9 +39,12 @@ async function ask(page, question) {
 }
 
 async function switchLanguage(page, locale) {
+  const before = await page.evaluate(() => window.SCIi18n.get());
+  assert.notEqual(before, locale);
   await page.locator('.sci-language-toggle').click();
-  await page.locator(`.sci-language-menu [data-language="${locale}"]`).click();
   await page.waitForFunction(expected => window.SCIi18n.get() === expected, locale);
+  assert.equal(await page.locator('.sci-language-current').innerText(), locale.toUpperCase());
+  assert.equal(await page.locator('.sci-language-menu').count(), 0);
 }
 
 for (const locale of ['pt', 'en']) {

@@ -5,8 +5,11 @@ on:
     paths:
       - 'question-scope.js'
       - 'question-scope.css'
+      - 'municipality-matching.js'
+      - 'locale-ui-stable.js'
       - 'index.html'
       - 'tests/question-scope.browser.cjs'
+      - 'tests/implicit-production.browser.cjs'
       - '.github/workflows/question-scope-browser.yml'
   workflow_dispatch:
 
@@ -32,5 +35,5 @@ jobs:
           done
           cat /tmp/sci-scope-http.log
           exit 1
-      - name: Check off-topic guidance and valid municipal queries
-        run: node --test tests/question-scope.browser.cjs
+      - name: Check off-topic guidance and implicit production queries
+        run: node --test tests/question-scope.browser.cjs tests/implicit-production.browser.cjs

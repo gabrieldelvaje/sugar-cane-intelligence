@@ -20,16 +20,16 @@
   --brand: #7ed99b;
   --accent: #a8d273;
 }
-/* The user bubble follows each theme's neutral surfaces, not a green tint. */
+/* Only the farmer's submitted question stands out in green against neutral results. */
 .conversation .message.user .message-content {
-  background: #e8edf2;
-  border-color: #cfd7e0;
-  color: #1c222b;
+  background: #d9f0e1;
+  border-color: #a2cfb0;
+  color: #18452b;
 }
 [data-theme="dark"] .conversation .message.user .message-content {
-  background: #262c32;
-  border-color: #464e56;
-  color: #f2f3f5;
+  background: #214430;
+  border-color: #477853;
+  color: #e6f8e9;
 }
 /* Keep the arrow legible against the light green accent in dark mode. */
 [data-theme="dark"] .question-bar button[type="submit"] {

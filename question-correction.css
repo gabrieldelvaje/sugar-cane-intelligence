@@ -1,14 +1,14 @@
-/* A correction is a guided choice, not an unrelated-topic warning. */
-.conversation .message.assistant .error.sci-repair-intro {
+/* In-scope mistakes use a neutral prompt rather than the red off-topic warning. */
+.conversation .message.assistant .error:has(+ .sci-repair-actions) {
   padding: 19px 24px 20px 26px;
   border: 1px solid var(--line);
-  border-radius: 16px 54px 54px 50px;
+  border-radius: 16px 55px 55px 55px;
   background: var(--surface2);
   color: var(--text);
   line-height: 1.6;
   font-size: 14px;
 }
-.conversation .message.assistant .error.sci-repair-intro strong {
+.conversation .message.assistant .error:has(+ .sci-repair-actions) strong {
   color: var(--brand);
   font-weight: 700;
 }
@@ -41,9 +41,7 @@
   font: inherit;
   font-weight: 400;
 }
-.conversation .message.assistant .sci-repair-city-search {
-  margin-top: 3px;
-}
+.conversation .message.assistant .sci-repair-city-search { margin-top: 3px; }
 .conversation .message.assistant .sci-repair-select:focus-visible,
 .conversation .message.assistant .sci-repair-city-search:focus-visible {
   outline: 2px solid var(--brand);
@@ -65,11 +63,9 @@
   background: var(--brand);
   filter: brightness(.94);
 }
-.conversation .message.assistant .sci-repair-feedback:not([hidden]) {
-  color: var(--danger);
-}
+.conversation .message.assistant .sci-repair-feedback:not([hidden]) { color: var(--danger); }
 @media (max-width: 650px) {
-  .conversation .message.assistant .error.sci-repair-intro {
+  .conversation .message.assistant .error:has(+ .sci-repair-actions) {
     padding: 18px 21px 20px 24px;
   }
 }

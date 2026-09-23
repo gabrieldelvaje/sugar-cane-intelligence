@@ -1,0 +1,36 @@
+name: Validate question scope in browser
+
+on:
+  push:
+    paths:
+      - 'question-scope.js'
+      - 'question-scope.css'
+      - 'index.html'
+      - 'tests/question-scope.browser.cjs'
+      - '.github/workflows/question-scope-browser.yml'
+  workflow_dispatch:
+
+jobs:
+  browser-question-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runner
+        run: npm install --no-save --no-package-lock playwright@1.55.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Launch local static site
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/sci-scope-http.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8765/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/sci-scope-http.log
+          exit 1
+      - name: Check off-topic guidance and valid municipal queries
+        run: node --test tests/question-scope.browser.cjs

@@ -1,15 +1,15 @@
 /* Clear, non-blocking guidance when a question cannot be analyzed.
    Uses theme variables so it works in light and dark mode. */
 /* Mirror the farmer bubble: the upper-left is a soft tip; the lower-left
-   is slightly less rounded than the right corners. The other corners
+   is set to 55px to keep the mirrored droplet shape. The other corners
    remain round without squeezing text against the curved edges. */
 .conversation .message.assistant .error {
-  border-radius: 16px 64px 64px 53px;
+  border-radius: 16px 64px 64px 55px;
 }
 .conversation .message.assistant .error:has(+ .sci-scope-actions) {
   padding: 22px 30px 24px 32px;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
-  border-radius: 16px 64px 64px 53px;
+  border-radius: 16px 64px 64px 55px;
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 10%, var(--bg));
   line-height: 1.6;

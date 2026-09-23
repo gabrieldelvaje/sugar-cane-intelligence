@@ -17,7 +17,7 @@
     { id: 'temperature', pt: 'temperatura média', en: 'average temperature', terms: ['temperatura', 'temperature', 'calor'] }
   ];
   const unsupported = /\b(?:futebol|jogos?|partida|placar|football|soccer|games?|matches?|scores?|populacao|population|habitantes|prefeito|mayor|eleicao|election|pib|gdp|renda|income|salario|salary|precos|prices|filme|movie|musica|music|crime|criminalidade|lottery|loteria|turismo|tourism|historia|history)\b/;
-  const intent = /\b(?:qual|quais|quanto|quantos|compare|comparar|comparacao|ranking|rank|top|maior|maiores|menor|menores|what|which|how|comparison|highest|lowest|largest|average|show|list)\b/;
+  const intent = /\b(?:qual|quais|como|quanto|quantos|compare|comparar|comparacao|ranking|rank|top|maior|maiores|menor|menores|what|which|how|comparison|highest|lowest|largest|average|show|list)\b/;
   const compareIntent = /\b(?:compare|comparar|comparacao|comparison)\b/;
   const rankIntent = /\b(?:ranking|rank|top|maiores|menores|municipios?|cidades?|municipalities|cities|highest|largest)\b/;
   const hasTerm = (text, term) => ` ${text.replace(/[^a-z0-9]+/g, ' ')} `.includes(` ${norm(term).replace(/[^a-z0-9]+/g, ' ')} `);

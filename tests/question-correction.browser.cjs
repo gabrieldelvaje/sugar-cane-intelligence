@@ -30,39 +30,41 @@ async function ask(page, question) {
   }, count, { timeout: 20000 });
   return page.locator('.chat-response').nth(count);
 }
-async function choose(repair, index, search, value) {
+async function choose(repair, index, query, value) {
   const box = repair.locator('.sci-repair-combobox').nth(index);
   await box.locator('.sci-repair-combobox-trigger').click();
-  assert.equal(await box.locator('.sci-repair-combobox-search').isVisible(), true, 'search is inside the same open dropdown');
-  if (search) await box.locator('.sci-repair-combobox-search').fill(search);
-  const option = box.locator('.sci-repair-combobox-option').filter({ hasText: value }).first();
-  await option.click();
-  assert.equal(await box.locator('.sci-repair-combobox-trigger').innerText(), value);
+  assert.equal(await box.locator('.sci-repair-combobox-search').isVisible(), true);
+  if (query) await box.locator('.sci-repair-combobox-search').fill(query);
+  await box.locator('.sci-repair-combobox-option').filter({ hasText: value }).first().click();
+  assert.equal(await box.locator('.sci-repair-combobox-value').innerText(), value);
   assert.equal(await box.locator('.sci-repair-combobox-menu').isVisible(), false);
 }
+async function waitForResponse(page, expected) {
+  await page.waitForFunction(number => document.querySelectorAll('.chat-response').length === number &&
+    !document.querySelector('#question-form button[type="submit"]').disabled,
+  expected, { timeout: 20000 });
+}
 
-test('two misspelled cities use exactly two searchable dropdowns, not four separate fields', async () => {
+test('two misspelled cities require only two searchable dropdowns and explicit confirmation', async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
   try {
     await start(page);
     const repair = await ask(page, 'Compare Aroracuara com Pirossacaba em 2024');
     assert.equal(await repair.locator('.sci-repair-combobox').count(), 2);
-    assert.equal(await repair.locator('.sci-repair-city-search').count(), 0, 'the redundant standalone search was removed');
+    assert.equal(await repair.locator('.sci-repair-city-search').count(), 0);
     assert.equal(await repair.locator('.sci-repair-combobox-menu:visible').count(), 0);
-    assert.equal(await page.locator('.conversation .message.user').count(), 1);
     await choose(repair, 0, 'Arara', 'Araraquara');
     await choose(repair, 1, 'Piraci', 'Piracicaba');
-    assert.equal(await page.locator('.conversation .message.user').count(), 1, 'never submit without confirmation');
+    assert.equal(await page.locator('.conversation .message.user').count(), 1);
     await repair.locator('.sci-repair-apply').click();
-    await page.waitForFunction(() => document.querySelectorAll('.chat-response').length === 2 &&
-      !document.querySelector('#question-form button[type="submit"]').disabled, null, { timeout: 20000 });
+    await waitForResponse(page, 2);
     assert.match(await page.locator('.message.user').last().innerText(), /Compare Araraquara com Piracicaba em 2024/);
     assert.equal(await page.locator('.chat-response').last().locator('.data-table tbody tr').count(), 2);
   } finally { await browser.close(); }
 });
 
-test('city list includes ranked suggestions, searchable other cities, and ranking choice inside one menu', async () => {
+test('one city dropdown offers similar places, full searchable index and the ranking choice', async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   try {
@@ -70,23 +72,21 @@ test('city list includes ranked suggestions, searchable other cities, and rankin
     const repair = await ask(page, 'Qual a precipitação?');
     assert.equal(await repair.locator('.sci-repair-combobox').count(), 2);
     assert.equal(await repair.locator('.sci-repair-city-search').count(), 0);
-    const place = repair.locator('.sci-repair-combobox').first();
-    await place.locator('.sci-repair-combobox-trigger').click();
-    assert.ok(await place.locator('.sci-repair-combobox-option').filter({ hasText: /Ranking dos municípios/ }).count());
-    assert.ok(await place.locator('.sci-repair-combobox-option').filter({ hasText: 'Piracicaba' }).count());
-    await place.locator('.sci-repair-combobox-search').fill('ribei');
-    assert.ok(await place.locator('.sci-repair-combobox-option').filter({ hasText: 'Ribeirão Preto' }).count());
-    await place.locator('.sci-repair-combobox-option').filter({ hasText: 'Ribeirão Preto' }).click();
+    const box = repair.locator('.sci-repair-combobox').first();
+    await box.locator('.sci-repair-combobox-trigger').click();
+    assert.ok(await box.locator('.sci-repair-combobox-option').filter({ hasText: /Ranking dos municípios/ }).count());
+    assert.ok(await box.locator('.sci-repair-combobox-option').filter({ hasText: 'Piracicaba' }).count());
+    await box.locator('.sci-repair-combobox-search').fill('ribei');
+    await box.locator('.sci-repair-combobox-option').filter({ hasText: 'Ribeirão Preto' }).click();
     await choose(repair, 1, 'preci', 'precipitação');
     await repair.locator('.sci-repair-apply').click();
-    await page.waitForFunction(() => document.querySelectorAll('.chat-response').length === 2 &&
-      !document.querySelector('#question-form button[type="submit"]').disabled, null, { timeout: 20000 });
+    await waitForResponse(page, 2);
     assert.match(await page.locator('.message.user').last().innerText(), /precipitação em Ribeirão Preto/);
     assert.equal(await page.locator('.chat-response').last().locator('.error').count(), 0);
   } finally { await browser.close(); }
 });
 
-test('metric typo and incomplete year each use one searchable menu', async () => {
+test('metric typo and incomplete year each use a single searchable menu', async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   try {
@@ -95,22 +95,19 @@ test('metric typo and incomplete year each use one searchable menu', async () =>
     assert.equal(await typo.locator('.sci-repair-combobox').count(), 1);
     await choose(typo, 0, 'preci', 'precipitação');
     await typo.locator('.sci-repair-apply').click();
-    await page.waitForFunction(() => document.querySelectorAll('.chat-response').length === 2 &&
-      !document.querySelector('#question-form button[type="submit"]').disabled, null, { timeout: 20000 });
+    await waitForResponse(page, 2);
     assert.equal(await page.locator('.chat-response').last().locator('.error').count(), 0);
-
     const invalidYear = await ask(page, 'Qual a precipitação em Piracicaba em 200?');
     assert.equal(await invalidYear.locator('.sci-repair-combobox').count(), 1);
     await choose(invalidYear, 0, '2000', '2000');
     await invalidYear.locator('.sci-repair-apply').click();
-    await page.waitForFunction(() => document.querySelectorAll('.chat-response').length === 4 &&
-      !document.querySelector('#question-form button[type="submit"]').disabled, null, { timeout: 20000 });
+    await waitForResponse(page, 4);
     assert.match(await page.locator('.message.user').last().innerText(), /em 2000/);
     assert.equal(await page.locator('.chat-response').last().locator('.error').count(), 0);
   } finally { await browser.close(); }
 });
 
-test('dropdowns reappear translated after switching locale and off-topic questions stay errors', async () => {
+test('locale switch restores translated dropdowns while out-of-scope messages remain errors', async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
   try {

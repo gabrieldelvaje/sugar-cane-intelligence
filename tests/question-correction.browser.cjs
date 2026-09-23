@@ -5,6 +5,8 @@ const URL = 'http://127.0.0.1:8765/';
 const rows = [
   { year: 2000, municipality: 'Piracicaba', uf: 'SP', production: 120, area: 4, productivity: 30, precipitation: 950, temperature: 19.71 },
   { year: 2000, municipality: 'Araraquara', uf: 'SP', production: 95, area: 5, productivity: 19, precipitation: 875, temperature: 20 },
+  { year: 2010, municipality: 'Piracicaba', uf: 'SP', production: 130, area: 5, productivity: 26, precipitation: 1010, temperature: 20.5 },
+  { year: 2010, municipality: 'Araraquara', uf: 'SP', production: 100, area: 5, productivity: 20, precipitation: 930, temperature: 20.7 },
   { year: 2024, municipality: 'Piracicaba', uf: 'SP', production: 140, area: 5, productivity: 28, precipitation: 1090, temperature: 21 },
   { year: 2024, municipality: 'Araraquara', uf: 'SP', production: 105, area: 5, productivity: 21, precipitation: 1040, temperature: 22 },
   { year: 2024, municipality: 'Ribeirão Preto', uf: 'SP', production: 90, area: 4, productivity: 22.5, precipitation: 990, temperature: 21 }
@@ -76,7 +78,13 @@ test('repair message points to the specific second municipality when only it is 
     assert.match(diagnostic, /segundo município/i);
     assert.match(diagnostic, /Pirossacaba/);
     assert.match(diagnostic, /erro de digitação/i);
+    assert.equal(await repair.locator('.sci-repair-diagnosis strong').count(), 2);
     assert.equal(await repair.locator('.sci-repair-combobox').count(), 1);
+    const cityBox = repair.locator('.sci-repair-combobox').first();
+    await cityBox.locator('.sci-repair-combobox-trigger').click();
+    const recommended = cityBox.locator('.sci-repair-combobox-option.is-recommended');
+    assert.ok(await recommended.count() >= 1);
+    assert.match(await recommended.first().innerText(), /Piracicaba/i);
   } finally { await browser.close(); }
 });
 
@@ -149,6 +157,31 @@ test('four-digit years outside coverage explain 1974–2024 and still offer a ye
       assert.equal(await repair.locator('.sci-year-range-help .sci-scope-example').count(), 2);
       assert.equal(await repair.locator('.sci-year-range-help .sci-scope-builder').count(), 1);
     }
+  } finally { await browser.close(); }
+});
+
+
+test('year typo highlights the field, bad value and closest year without pill-shaped options', async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
+  try {
+    await start(page);
+    const repair = await ask(page, 'Qual a precipitação em Piracicaba em 201?');
+    const bold = repair.locator('.sci-repair-diagnosis strong');
+    assert.equal(await bold.count(), 2);
+    assert.equal((await bold.nth(0).innerText()).toLowerCase(), 'ano');
+    assert.equal(await bold.nth(1).innerText(), '201');
+    const box = repair.locator('.sci-repair-combobox').first();
+    await box.locator('.sci-repair-combobox-trigger').click();
+    const first = box.locator('.sci-repair-combobox-option').first();
+    assert.equal(await first.innerText(), '2010');
+    assert.equal(await first.getAttribute('data-recommended'), 'true');
+    const style = await first.evaluate(node => ({
+      radius: getComputedStyle(node).borderRadius,
+      background: getComputedStyle(node).backgroundColor
+    }));
+    assert.ok(style.radius === '0px' || style.radius === '0');
+    assert.notEqual(style.background, 'rgba(0, 0, 0, 0)');
   } finally { await browser.close(); }
 });
 

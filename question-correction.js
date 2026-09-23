@@ -164,12 +164,72 @@
     pt: { title: 'Vamos corrigir sua pergunta', hint: 'Escolha as opções abaixo. Só farei a análise depois da sua confirmação.',
       metric: 'Indicador', city: 'Município', first: 'Primeiro município', second: 'Segundo município', year: 'Ano',
       choose: 'Selecione uma opção', search: 'Buscar outro município…', submit: 'Analisar pergunta corrigida',
-      required: 'Selecione os campos indicados para continuar.', rank: 'Ranking dos municípios (sem cidade específica)' },
+      required: 'Selecione os campos indicados para continuar.', rank: 'Ranking dos municípios (sem cidade específica)',
+      firstProblem: 'primeiro município', secondProblem: 'segundo município',
+      cityTypo: 'Parece haver um erro de digitação.',
+      bothCities: 'Não consegui identificar os dois municípios informados. Parece haver erros de digitação.',
+      metricTypo: 'O indicador informado parece ter um erro de digitação.',
+      yearProblem: 'O ano informado não corresponde a um ano válido da base.',
+      missingLocation: 'Falta informar qual município você quer analisar.',
+      missingMetric: 'Não consegui identificar qual indicador você quer analisar.',
+      confirmMetric: 'Confirme também o indicador antes de continuar.',
+      fallbackProblem: 'Encontrei uma parte da pergunta que precisa ser corrigida.' },
     en: { title: 'Let’s correct your question', hint: 'Choose the options below. I will only analyze the corrected question after you confirm.',
       metric: 'Indicator', city: 'Municipality', first: 'First municipality', second: 'Second municipality', year: 'Year',
       choose: 'Choose an option', search: 'Search another municipality…', submit: 'Analyze corrected question',
-      required: 'Choose the required fields to continue.', rank: 'Municipality ranking (no specific city)' }
+      required: 'Choose the required fields to continue.', rank: 'Municipality ranking (no specific city)',
+      firstProblem: 'first municipality', secondProblem: 'second municipality',
+      cityTypo: 'There may be a typo.',
+      bothCities: 'I could not identify either municipality. There may be typos in both names.',
+      metricTypo: 'The indicator appears to contain a typo.',
+      yearProblem: 'The year does not match a valid year in the dataset.',
+      missingLocation: 'The municipality to analyze is missing.',
+      missingMetric: 'I could not identify which indicator you want to analyze.',
+      confirmMetric: 'Please also confirm the indicator before continuing.',
+      fallbackProblem: 'I found a part of the question that needs to be corrected.' }
   };
+  function diagnosis(detection, language) {
+    const s = copy[language];
+    const repairs = detection.repairs;
+    const cityRepairs = repairs.filter(repair => repair.kind === 'city');
+    const pieces = [];
+
+    if (cityRepairs.length >= 2) pieces.push(s.bothCities);
+    else if (cityRepairs.length === 1) {
+      const repair = cityRepairs[0];
+      const position = repair.slot === 2 ? s.secondProblem : s.firstProblem;
+      const quoted = repair.original ? ` “${repair.original}”` : '';
+      pieces.push(language === 'en'
+        ? `I could not identify the ${position}${quoted}. ${s.cityTypo}`
+        : `Não consegui identificar o ${position}${quoted}. ${s.cityTypo}`);
+    }
+
+    const metricRepair = repairs.find(repair => repair.kind === 'metric');
+    if (metricRepair) {
+      const quoted = metricRepair.original ? ` “${metricRepair.original}”` : '';
+      pieces.push(language === 'en'
+        ? `${s.metricTypo}${quoted ? ` Check${quoted}.` : ''}`
+        : `${s.metricTypo}${quoted ? ` Revise${quoted}.` : ''}`);
+    }
+
+    const yearRepair = repairs.find(repair => repair.kind === 'year');
+    if (yearRepair) {
+      const quoted = yearRepair.original ? ` “${yearRepair.original}”` : '';
+      pieces.push(language === 'en'
+        ? `${s.yearProblem}${quoted ? ` I found${quoted}.` : ''}`
+        : `${s.yearProblem}${quoted ? ` Encontrei${quoted}.` : ''}`);
+    }
+
+    if (repairs.some(repair => repair.kind === 'location')) pieces.push(s.missingLocation);
+    if (repairs.some(repair => ['metricMissing', 'ranking'].includes(repair.kind))) pieces.push(s.missingMetric);
+    if (repairs.some(repair => repair.kind === 'metricChoice') &&
+        !repairs.some(repair => ['metric', 'metricMissing', 'ranking'].includes(repair.kind))) {
+      pieces.push(s.confirmMetric);
+    }
+
+    return pieces.join(' ') || s.fallbackProblem;
+  }
+
   function field(repair, index, language) {
     const s = copy[language];
     const city = ['city', 'location'].includes(repair.kind);
@@ -190,7 +250,8 @@
     const s = copy[language];
     // An exact class="error" allows the existing streaming controller to
     // suppress unrelated follow-up suggestions without changing that controller.
-    return `<div class="error"><div class="sci-repair-intro"><strong>${html(s.title)}</strong><br>${html(s.hint)}</div></div>` +
+    const problem = diagnosis(detection, language);
+    return `<div class="error"><div class="sci-repair-intro"><strong>${html(s.title)}</strong><br><span class="sci-repair-diagnosis">${html(problem)}</span><br>${html(s.hint)}</div></div>` +
       `<div class="sci-scope-actions sci-repair-actions">` +
       detection.repairs.map((repair, index) => field(repair, index, language)).join('') +
       '<p class="sci-repair-feedback" role="status" hidden></p>' +

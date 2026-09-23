@@ -66,3 +66,12 @@
   text-align: center;
   font-weight: 650;
 }
+
+/* Capability overview is an informational assistant response, not an error. */
+.conversation .message.assistant .sci-capability-overview{max-width:760px;padding:4px 2px;color:var(--text)}
+.conversation .message.assistant .sci-capability-overview h2{margin:0 0 10px;font-size:21px;letter-spacing:-.3px}
+.conversation .message.assistant .sci-capability-overview p{margin:0 0 14px;line-height:1.65;color:var(--text)}
+.conversation .message.assistant .sci-capability-overview ul{display:grid;gap:7px;margin:8px 0 16px;padding-left:20px;line-height:1.55}
+.conversation .message.assistant .sci-capability-overview li::marker{color:var(--brand)}
+.conversation .message.assistant .sci-capability-actions{margin-top:8px}
+.conversation .message.assistant .sci-capability-actions .sci-scope-builder{background:color-mix(in srgb,var(--brand) 8%,var(--surface))}

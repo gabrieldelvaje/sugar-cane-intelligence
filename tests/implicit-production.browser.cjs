@@ -74,16 +74,16 @@ for (const locale of ['pt', 'en']) {
         : 'Compare Ribeirao and Piracicaba by population');
       assert.match(await unrelated.locator('.error').innerText(),
         locale === 'pt' ? /Não consigo responder/ : /I cannot answer/);
-      assert.equal(await unrelated.locator('.ranking-bar-chart, .data-table, .kpi').count(), 0);
+      assert.equal(await unrelated.locator('.ranking-bar-chart, .data-table, .kpi, .sci-repair-actions').count(), 0);
 
       const incomplete = await ask(page, locale === 'pt'
         ? 'Qual foi a precipitação?'
         : 'What was the rainfall?');
       assert.match(await incomplete.locator('.error').innerText(),
-        locale === 'pt' ? /Não consigo gerar/ : /I cannot produce/);
-    } finally {
-      await browser.close();
-    }
+        locale === 'pt' ? /Vamos corrigir sua pergunta/ : /correct your question/);
+      assert.equal(await incomplete.locator('.sci-repair-actions').count(), 1);
+      assert.equal(await incomplete.locator('.sci-repair-select').count(), 2);
+    } finally { await browser.close(); }
   });
 }
 
@@ -103,7 +103,5 @@ test('English implicit queries keep their intent during EN→PT→EN→PT', asyn
       assert.equal(await ranking.locator('.ranking-bar-row').count(), 5);
       assert.match(await ranking.innerText(), locale === 'pt' ? /[Pp]rodução/ : /production/i);
     }
-  } finally {
-    await browser.close();
-  }
+  } finally { await browser.close(); }
 });

@@ -53,8 +53,17 @@ for (const locale of ['pt', 'en']) {
         locale === 'pt' ? /Não consigo responder/ : /I cannot answer/);
       assert.equal(await greeting.locator('.kpi, .data-table, .ranking-bar-chart').count(), 0);
       assert.equal(await greeting.locator('.sci-scope-example').count(), 2);
+      assert.equal(await greeting.locator('.sci-scope-example').first().innerText(),
+        locale === 'pt' ? 'O que você pode fazer?' : 'What can you do?');
       assert.equal(await greeting.locator('.sci-scope-builder').count(), 1);
       assert.equal(await greeting.locator('.follow-up-suggestions').count(), 0);
+
+      const capability = await ask(page, locale === 'pt' ? 'O que você pode fazer?' : 'What can you do?');
+      assert.equal(await capability.locator('.error').count(), 0);
+      assert.equal(await capability.locator('.sci-capability-overview').count(), 1);
+      assert.match(await capability.locator('.sci-capability-overview').innerText(),
+        locale === 'pt' ? /Produção de cana/ : /Sugarcane production/);
+      assert.equal(await capability.locator('.sci-capability-actions .sci-scope-builder').count(), 1);
 
       const game = await ask(page, locale === 'pt'
         ? 'Qual foi o resultado do jogo de ontem?'

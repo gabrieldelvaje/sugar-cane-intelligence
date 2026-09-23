@@ -50,7 +50,11 @@
     const kind = select.dataset.repairKind;
     const city = kind === 'city' || kind === 'location';
     const initial = [...select.options].filter(option => option.value)
-      .map(option => ({ value: option.value, text: option.textContent }));
+      .map(option => ({
+        value: option.value,
+        text: option.textContent,
+        recommended: option.dataset.recommended === 'true'
+      }));
     const box = document.createElement('div');
     box.className = 'sci-repair-combobox';
     const trigger = document.createElement('button');
@@ -114,8 +118,8 @@
           const pb = normalize(b).startsWith(query) ? 0 : 1;
           return pa - pb || a.localeCompare(b, 'pt-BR');
         });
-        const matches = query ? matched.slice(0, 12).map(name => ({ value: name, text: name }))
-          : [...suggestions, ...matched.map(name => ({ value: name, text: name }))];
+        const matches = query ? matched.slice(0, 12).map(name => ({ value: name, text: name, recommended: false }))
+          : [...suggestions, ...matched.map(name => ({ value: name, text: name, recommended: false }))];
         const seen = new Set();
         candidates = matches.filter(option => option.value && !seen.has(normalize(option.value)) && seen.add(normalize(option.value))).slice(0, 12);
         if (!query && special.length) candidates.unshift(...special);
@@ -140,10 +144,14 @@
       for (const item of candidates) {
         const option = document.createElement('button');
         option.type = 'button';
-        option.className = 'sci-repair-combobox-option';
+        option.className = 'sci-repair-combobox-option' + (item.recommended ? ' is-recommended' : '');
         option.setAttribute('role', 'option');
         option.setAttribute('aria-selected', String(item.value === select.value));
         option.dataset.value = item.value;
+        if (item.recommended) {
+          option.dataset.recommended = 'true';
+          option.setAttribute('aria-label', item.text + (language() === 'en' ? ', closest suggestion' : ', sugestão mais próxima'));
+        }
         option.textContent = item.text;
         option.addEventListener('click', () => {
           if (![...select.options].some(native => native.value === item.value)) select.add(new Option(item.text, item.value));

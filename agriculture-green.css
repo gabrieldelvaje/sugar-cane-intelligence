@@ -20,15 +20,14 @@
   --brand: #7ed99b;
   --accent: #a8d273;
 }
-/* The farmer's submitted question stands out in green. Both lower corners
-   and the upper-left are rounded; only the upper-right has a small soft tip.
-   Avoid 999px radii here: CSS scales all corners down on shorter bubbles,
-   making the lower-right look square. */
+/* The farmer's submitted question stands out in green. The upper-right
+   stays softly pointed; its lower-right radius is 25% smaller than the
+   rounded left corners, keeping the droplet shape balanced on long text. */
 .conversation .message.user .message-content {
   background: #d9f0e1;
   border-color: #a2cfb0;
   color: #18452b;
-  border-radius: 56px 14px 56px 56px;
+  border-radius: 56px 14px 42px 56px;
 }
 [data-theme="dark"] .conversation .message.user .message-content {
   background: #214430;

@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'question-scope.js'
+      - 'dynamic-questions.js'
+      - 'styles.css'
+      - 'locale-ui-dictionary.js'
       - 'question-scope.css'
       - 'question-correction.js'
       - 'question-correction.css'

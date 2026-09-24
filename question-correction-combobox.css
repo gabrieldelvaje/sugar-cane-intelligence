@@ -177,3 +177,35 @@
 .conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option {
   border-radius: 0;
 }
+
+/* Correction results are unboxed text rows, including hover, focus and the selected row.
+   Keep the dropdown panel and its search field intact. The four-point star is
+   shared visually with the fixed “O que você pode fazer?” suggestion. */
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option:hover,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option:focus-visible,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option[aria-selected="true"],
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option.is-recommended,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option.is-recommended:hover,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option.is-recommended:focus-visible {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 9px 37px 9px 14px;
+}
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option.is-recommended::before {
+  content: none;
+  display: none;
+}
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option.is-recommended::after {
+  content: '✦';
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--brand);
+  pointer-events: none;
+}

@@ -17,9 +17,8 @@ async function start(page) {
     state.ready = true;
     document.querySelector('#loading-card').classList.remove('is-visible');
     window.SCIi18n.set('pt');
-    // Capture the instant each section truly becomes visible. The original
-    // controller clears all hidden classes in one batch; the staged controller
-    // intercepts that batch and restores them before browser paint.
+    // Record the instant each section becomes visible, not merely when
+    // a hidden element was appended to the document.
     window.__stageEvents = [];
     new MutationObserver(records => {
       for (const record of records) {
@@ -60,6 +59,17 @@ test('comparison reveals KPI group, table, line chart and follow-ups one at a ti
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   try {
+    await start(page);
+    await checkOrder(page, 'Compare a produção de Piracicaba e Ribeirão Preto entre 2010 e 2024.',
+      ['cards', 'table', 'chart', 'suggestions']);
+  } finally { await browser.close(); }
+});
+
+test('desktop still reveals sections one by one when reduced motion disables animations', async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  try {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await start(page);
     await checkOrder(page, 'Compare a produção de Piracicaba e Ribeirão Preto entre 2010 e 2024.',
       ['cards', 'table', 'chart', 'suggestions']);

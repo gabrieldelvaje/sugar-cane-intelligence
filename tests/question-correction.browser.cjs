@@ -161,7 +161,7 @@ test('four-digit years outside coverage explain 1974–2024 and still offer a ye
 });
 
 
-test('year typo highlights the field, bad value and closest year without pill-shaped options', async () => {
+test('year typo highlights the field, bad value and closest year with text-only options and a star', async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   try {
@@ -176,12 +176,27 @@ test('year typo highlights the field, bad value and closest year without pill-sh
     const first = box.locator('.sci-repair-combobox-option').first();
     assert.equal(await first.innerText(), '2010');
     assert.equal(await first.getAttribute('data-recommended'), 'true');
-    const style = await first.evaluate(node => ({
-      radius: getComputedStyle(node).borderRadius,
-      background: getComputedStyle(node).backgroundColor
-    }));
+    const style = await first.evaluate(node => {
+      const css = getComputedStyle(node);
+      const star = getComputedStyle(node, '::after');
+      const oldLine = getComputedStyle(node, '::before');
+      return {
+        radius: css.borderRadius,
+        background: css.backgroundColor,
+        color: css.color,
+        border: css.borderBottomWidth,
+        star: star.content,
+        oldLine: oldLine.content
+      };
+    });
     assert.ok(style.radius === '0px' || style.radius === '0');
-    assert.notEqual(style.background, 'rgba(0, 0, 0, 0)');
+    assert.equal(style.background, 'rgba(0, 0, 0, 0)');
+    assert.equal(style.border, '0px');
+    assert.match(style.star, /✦/);
+    assert.equal(style.oldLine, 'none');
+    const ordinary = box.locator('.sci-repair-combobox-option').nth(1);
+    const ordinaryBackground = await ordinary.evaluate(node => getComputedStyle(node).backgroundColor);
+    assert.equal(ordinaryBackground, 'rgba(0, 0, 0, 0)');
   } finally { await browser.close(); }
 });
 

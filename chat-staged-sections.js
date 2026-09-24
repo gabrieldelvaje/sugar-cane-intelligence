@@ -8,6 +8,9 @@
   const sequences = new WeakMap();
   const EASE = 'cubic-bezier(.22, 1, .36, 1)';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Never let a disabled/unavailable animation collapse the entire answer into
+  // one frame. Reduced-motion users get the same order, without movement.
+  const MIN_SECTION_GAP = 240;
 
   function scrollToLatest() {
     window.scrollTo({
@@ -35,23 +38,32 @@
 
   async function reveal(node, response) {
     if (!response.isConnected || !node.isConnected) return;
+    const started = performance.now();
     node.classList.remove('chat-deferred');
     if (node.classList.contains('follow-up-suggestions')) node.style.visibility = 'visible';
     scrollToLatest();
-    if (reducedMotion.matches || document.hidden || !node.animate) return;
-    const animation = node.animate([
-      { opacity: 0, transform: 'translateY(9px)' },
-      { opacity: 1, transform: 'translateY(0)' }
-    ], { duration: 380, easing: EASE, fill: 'both' });
-    try { await animation.finished; } catch (_) { /* New chat can remove the node. */ }
-    finally { animation.cancel(); }
+    if (!reducedMotion.matches && !document.hidden && node.animate) {
+      const animation = node.animate([
+        { opacity: 0, transform: 'translateY(9px)' },
+        { opacity: 1, transform: 'translateY(0)' }
+      ], { duration: 380, easing: EASE, fill: 'both' });
+      try { await animation.finished; } catch (_) { /* New chat can remove the node. */ }
+      finally { animation.cancel(); }
+    }
+    // Chrome on desktop can report reduced motion, a hidden tab or disabled
+    // Web Animations. In those cases there is no animation.finished to await.
+    // Retain a real interval between blocks instead of showing everything at once.
+    const remaining = MIN_SECTION_GAP - (performance.now() - started);
+    if (remaining > 0 && response.isConnected && node.isConnected) {
+      await new Promise(resolve => setTimeout(resolve, remaining));
+    }
     scrollToLatest();
   }
 
   async function revealSequence(sequence) {
-    // Let the browser register the restored hidden state before the first
-    // section enters; the text streaming has already finished at this point.
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    // Do not wait on requestAnimationFrame in hidden desktop tabs, where it can
+    // be suspended. The sections are already hidden until their own turn.
+    if (!document.hidden) await new Promise(resolve => requestAnimationFrame(resolve));
     for (const section of sequence.sections) {
       if (!sequence.response.isConnected) return;
       await reveal(section, sequence.response);

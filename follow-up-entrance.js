@@ -5,6 +5,9 @@
   if (!conversation) return;
 
   function prepareSuggestions(group) {
+    // Answer sections have their own sequential reveal: in those responses,
+    // the follow-ups wait until cards, tables and charts have appeared.
+    if (group.classList.contains('chat-deferred')) return;
     if (group.dataset.entrancePrepared) return;
     group.dataset.entrancePrepared = 'true';
 

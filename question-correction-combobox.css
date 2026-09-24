@@ -209,3 +209,22 @@
   color: var(--brand);
   pointer-events: none;
 }
+
+/* A hover is temporary navigation feedback, not a permanent pill or recommendation fill.
+   Apply it after the transparent-row rules (including recommended options) so the
+   entire row highlights in either theme while the four-point star stays in place. */
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option {
+  transition: background-color 150ms ease;
+}
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option:hover,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option.is-recommended:hover,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option:focus-visible,
+.conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option.is-recommended:focus-visible {
+  background: color-mix(in srgb, var(--text) 7%, var(--bg));
+  border-radius: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .conversation .message.assistant .sci-scope-actions .sci-repair-combobox-option {
+    transition: none;
+  }
+}

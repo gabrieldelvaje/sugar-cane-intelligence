@@ -17,33 +17,43 @@ async function start(page) {
     state.ready = true;
     document.querySelector('#loading-card').classList.remove('is-visible');
     window.SCIi18n.set('pt');
+    // Capture the instant each section truly becomes visible. The original
+    // controller clears all hidden classes in one batch; the staged controller
+    // intercepts that batch and restores them before browser paint.
+    window.__stageEvents = [];
+    new MutationObserver(records => {
+      for (const record of records) {
+        const node = record.target;
+        if (!record.oldValue?.split(/\s+/).includes('chat-deferred') ||
+            node.classList.contains('chat-deferred')) continue;
+        const type = node.matches('.kpis') ? 'cards'
+          : node.matches('.table-wrap') ? 'table'
+          : node.matches('.chart') ? 'chart'
+          : node.matches('.follow-up-suggestions') ? 'suggestions' : null;
+        if (type) window.__stageEvents.push({ type, time: performance.now() });
+      }
+    }).observe(document.querySelector('#conversation'), {
+      subtree: true, attributes: true, attributeFilter: ['class'], attributeOldValue: true
+    });
   }, rows);
 }
 
-async function ask(page, question) {
+async function checkOrder(page, question, expected) {
   await page.locator('#question').fill(question);
   await page.locator('#question-form button[type="submit"]').click();
-  await page.locator('.chat-response').last().waitFor({ state: 'attached' });
-  return page.locator('.chat-response').last();
-}
-
-async function checkOrder(page, question, sections) {
-  const response = await ask(page, question);
-  for (let i = 0; i < sections.length; i++) {
-    await response.locator(sections[i]).first().waitFor({ state: 'visible', timeout: 20000 });
-    for (let later = i + 1; later < sections.length; later++) {
-      const next = response.locator(sections[later]).first();
-      if (await next.count()) {
-        assert.equal(await next.isVisible(), false,
-          `${sections[later]} appeared before ${sections[i]} finished`);
-      }
-    }
+  await page.waitForFunction(length => window.__stageEvents.length >= length,
+    expected.length, { timeout: 20000 });
+  const events = await page.evaluate(() => window.__stageEvents);
+  const types = events.map(event => event.type);
+  assert.deepEqual(types, expected, `Unexpected reveal order: ${types.join(' → ')}`);
+  for (let i = 1; i < events.length; i++) {
+    const gap = events[i].time - events[i - 1].time;
+    assert.ok(gap >= 180,
+      `${events[i].type} appeared only ${Math.round(gap)}ms after ${events[i - 1].type}`);
   }
-  await page.waitForFunction(() => {
-    const group = document.querySelector('.chat-response:last-of-type .follow-up-suggestions');
-    return !!group && getComputedStyle(group).display !== 'none' && getComputedStyle(group).visibility === 'visible';
-  }, null, { timeout: 20000 });
+  const response = page.locator('.chat-response').last();
   assert.equal(await response.locator('.chat-deferred').count(), 0);
+  assert.equal(await response.locator('.follow-up-suggestions').isVisible(), true);
 }
 
 test('comparison reveals KPI group, table, line chart and follow-ups one at a time', async () => {
@@ -52,7 +62,7 @@ test('comparison reveals KPI group, table, line chart and follow-ups one at a ti
   try {
     await start(page);
     await checkOrder(page, 'Compare a produção de Piracicaba e Ribeirão Preto entre 2010 e 2024.',
-      ['.kpis', '.table-wrap', '.historical-line-chart', '.follow-up-suggestions']);
+      ['cards', 'table', 'chart', 'suggestions']);
   } finally { await browser.close(); }
 });
 
@@ -62,16 +72,16 @@ test('single-city series reveals cards, chart and suggestions in that order', as
   try {
     await start(page);
     await checkOrder(page, 'Qual foi a precipitação em Piracicaba entre 2010 e 2024?',
-      ['.kpis', '.historical-line-chart', '.follow-up-suggestions']);
+      ['cards', 'chart', 'suggestions']);
   } finally { await browser.close(); }
 });
 
-test('rankings reveal KPI group, table and chart before follow-ups', async () => {
+test('a chart-only ranking reveals its bar chart before follow-up suggestions', async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1366, height: 800 } });
   try {
     await start(page);
     await checkOrder(page, 'Quais são os 2 municípios com maior produção em 2024?',
-      ['.kpis', '.table-wrap', '.follow-up-suggestions']);
+      ['chart', 'suggestions']);
   } finally { await browser.close(); }
 });

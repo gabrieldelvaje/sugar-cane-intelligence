@@ -12,9 +12,7 @@
   if (!hero || !slot || !form || !suggestions || !reset) return;
 
   let moveAnimation = null;
-  // Keep the completion signal and expose a slightly earlier handoff.
-  // Starting the user's bubble just before the composer finishes eliminates
-  // the perceived pause, while both animations retain their own timing.
+  // Expose a position-synchronized transition handoff for the first bubble.
   let dockFinished = Promise.resolve();
   let bubbleHandoff = Promise.resolve();
   window.SCIComposerDock = {
@@ -22,15 +20,41 @@
     whenReadyForBubble: () => bubbleHandoff
   };
 
-  function scheduleBubbleHandoff(animation, duration, leadMs = 145) {
-    // In background/reduced-timer situations, completion wins the race.
-    // Clear the timer afterward; a canceled animation also resolves promptly.
+  function scheduleBubbleHandoff(animation) {
+    // The easing is strongly ease-out: at half the animation duration the
+    // composer has already traveled ~96% of the way to the footer. Trigger
+    // the bubble by actual visual progress, not a late wall-clock timeout.
+    // This works identically on desktop and mobile and stays synchronized
+    // when frames are delayed.
     const settled = animation.finished.catch(() => {});
-    bubbleHandoff = new Promise(resolve => {
-      const timer = window.setTimeout(resolve, Math.max(0, duration - leadMs));
-      settled.then(() => { window.clearTimeout(timer); resolve(); });
-    });
     dockFinished = settled;
+    bubbleHandoff = new Promise(resolve => {
+      let frame = 0;
+      let done = false;
+      const release = () => {
+        if (done) return;
+        done = true;
+        if (frame) cancelAnimationFrame(frame);
+        resolve();
+      };
+      const sample = () => {
+        frame = 0;
+        if (animation.playState === 'idle' || animation.playState === 'finished') {
+          release();
+          return;
+        }
+        const progress = animation.effect?.getComputedTiming()?.progress;
+        if (typeof progress === 'number' && progress >= .93) {
+          release();
+          return;
+        }
+        frame = requestAnimationFrame(sample);
+      };
+      frame = requestAnimationFrame(sample);
+      // Also resolve if a pending animation is canceled or finishes before
+      // the next visual progress sample (for example in a background tab).
+      settled.then(release);
+    });
   }
   const desktop = () => window.matchMedia('(min-width: 651px)').matches;
   // Chat animations already run on desktop independently of the OS setting.
@@ -78,7 +102,7 @@
         easing: 'cubic-bezier(.22, 1, .36, 1)'
       });
       const animation = moveAnimation;
-      scheduleBubbleHandoff(animation, 620, 135);
+      scheduleBubbleHandoff(animation);
       animation.addEventListener('finish', () => {
         if (moveAnimation === animation) moveAnimation = null;
       }, { once: true });
@@ -112,7 +136,7 @@
       fill: 'both'
     });
     moveAnimation = animation;
-    scheduleBubbleHandoff(animation, 680, 155);
+    scheduleBubbleHandoff(animation);
     form.style.transform = targetTransform;
     animation.addEventListener('finish', () => {
       if (moveAnimation !== animation) return;

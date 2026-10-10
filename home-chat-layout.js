@@ -12,31 +12,88 @@
   if (!hero || !slot || !form || !suggestions || !reset) return;
 
   let moveAnimation = null;
+  let moveFrame = 0;
   const motionAllowed = () =>
     !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const desktop = () => window.matchMedia('(min-width: 651px)').matches;
+
+  function clearMove() {
+    if (moveFrame) cancelAnimationFrame(moveFrame);
+    moveFrame = 0;
+    moveAnimation?.cancel();
+    moveAnimation = null;
+    form.style.removeProperty('transform');
+    form.style.removeProperty('transform-origin');
+    form.style.removeProperty('will-change');
+  }
 
   function dockComposer() {
     if (!body.classList.contains('sci-home')) return;
+    clearMove();
     const first = form.getBoundingClientRect();
-    moveAnimation?.cancel();
-    // Place the exact same form back where the existing chat expects it.
+    // Reparent the SAME form; keep the handlers and builder intact.
     body.append(form);
     body.classList.remove('sci-home');
     const last = form.getBoundingClientRect();
+    if (!motionAllowed() || !first.width || !last.width || !form.animate) return;
 
-    if (!motionAllowed() || !first.width || !last.width) return;
     const dx = first.left - last.left;
     const dy = first.top - last.top;
     const sx = first.width / last.width;
     const sy = first.height / last.height;
-    moveAnimation = form.animate([
-      { translate: `${dx}px ${dy}px`, scale: `${sx} ${sy}` },
-      { translate: '0px 0px', scale: '1 1' }
-    ], {
-      duration: 620,
-      easing: 'cubic-bezier(.22, 1, .36, 1)'
+
+    if (!desktop()) {
+      // Preserve the existing, working mobile animation.
+      moveAnimation = form.animate([
+        { translate: `${dx}px ${dy}px`, scale: `${sx} ${sy}` },
+        { translate: '0px 0px', scale: '1 1' }
+      ], {
+        duration: 620,
+        easing: 'cubic-bezier(.22, 1, .36, 1)'
+      });
+      const animation = moveAnimation;
+      animation.addEventListener('finish', () => {
+        if (moveAnimation === animation) moveAnimation = null;
+      }, { once: true });
+      return;
+    }
+
+    // Desktop: animate the real CSS transform, not the independent
+    // translate/scale properties. Applying the inverted transform inline
+    // BEFORE the first paint prevents the docked form from flashing at
+    // the bottom while Chromium is initializing the WAAPI animation.
+    const endTransform = getComputedStyle(form).transform;
+    const base = new DOMMatrixReadOnly(endTransform === 'none' ? undefined : endTransform);
+    const startTransform = `matrix(${sx}, 0, 0, ${sy}, ${base.m41 + dx}, ${base.m42 + dy})`;
+    const targetTransform = endTransform === 'none'
+      ? 'matrix(1, 0, 0, 1, 0, 0)' : endTransform;
+
+    form.style.transformOrigin = 'top left';
+    form.style.willChange = 'transform';
+    form.style.transform = startTransform;
+
+    // Start on the next frame: the first position is guaranteed to exist
+    // before the hero is removed by the normal question controller.
+    moveFrame = requestAnimationFrame(() => {
+      moveFrame = 0;
+      if (body.classList.contains('sci-home')) return;
+      const animation = form.animate([
+        { transform: startTransform },
+        { transform: targetTransform }
+      ], {
+        duration: 680,
+        easing: 'cubic-bezier(.22, 1, .36, 1)',
+        fill: 'both'
+      });
+      moveAnimation = animation;
+      form.style.transform = targetTransform;
+      animation.addEventListener('finish', () => {
+        if (moveAnimation !== animation) return;
+        // The inline target equals the original dock transform; cleaning
+        // the inline styles therefore cannot cause a final-frame flash.
+        clearMove();
+      }, { once: true });
     });
-    moveAnimation.addEventListener('finish', () => { moveAnimation = null; }, { once: true });
   }
 
   // Registered before chat-ui-v5's capture handlers. Docking happens before
@@ -51,8 +108,7 @@
   // while a chat animation is running. Do not gate on hero.hidden: depending
   // on the order of reset listeners, the legacy code may unhide it afterward.
   reset.addEventListener('click', () => {
-    moveAnimation?.cancel();
-    moveAnimation = null;
+    clearMove();
     slot.append(form);
     body.classList.add('sci-home');
     hero.hidden = false;

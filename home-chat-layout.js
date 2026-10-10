@@ -12,6 +12,10 @@
   if (!hero || !slot || !form || !suggestions || !reset) return;
 
   let moveAnimation = null;
+  // Expose the current docking completion to the chat controller so the
+  // first user bubble waits for the composer to reach its footer position.
+  let dockFinished = Promise.resolve();
+  window.SCIComposerDock = { whenSettled: () => dockFinished };
   const desktop = () => window.matchMedia('(min-width: 651px)').matches;
   // Chat animations already run on desktop independently of the OS setting.
   // Match that behavior here; keep the working mobile preference untouched.
@@ -51,6 +55,7 @@
         easing: 'cubic-bezier(.22, 1, .36, 1)'
       });
       const animation = moveAnimation;
+      dockFinished = animation.finished.catch(() => {});
       animation.addEventListener('finish', () => {
         if (moveAnimation === animation) moveAnimation = null;
       }, { once: true });
@@ -84,6 +89,7 @@
       fill: 'both'
     });
     moveAnimation = animation;
+    dockFinished = animation.finished.catch(() => {});
     form.style.transform = targetTransform;
     animation.addEventListener('finish', () => {
       if (moveAnimation !== animation) return;

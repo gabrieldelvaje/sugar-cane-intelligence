@@ -37,47 +37,61 @@
     new ResizeObserver(syncDock).observe(form);
   }
 
-  // On desktop, do not depend on a CSS animation or the OS motion preference:
-  // question-builder.js skips its animation entirely under reduced motion.
-  // Drive the full-size panel with the same frame-based transform technique
-  // used elsewhere in the chat, while the clipped stage hides the lower half.
+  // The welcome builder is a centered dialog; after a question it resumes
+  // the established slide-up-from-composer animation unchanged.
   let desktopAnimation = null;
   let desktopAnimationToken = 0;
   const isDesktop = () => window.matchMedia('(min-width: 651px)').matches;
 
-  function animateDesktop(expanded) {
-    if (!isDesktop() || typeof panel.animate !== 'function') return;
-    syncDock();
+  function animatePanel(expanded) {
+    const welcome = document.body.classList.contains('sci-home');
+    if ((!welcome && !isDesktop()) || typeof panel.animate !== 'function') return;
+    if (!welcome) syncDock();
 
     const token = ++desktopAnimationToken;
-    // Preserve the current transform if the user reverses the motion midway.
-    const interruptedTransform = desktopAnimation && desktopAnimation.playState === 'running'
-      ? getComputedStyle(panel).transform : null;
+    const running = desktopAnimation && desktopAnimation.playState === 'running';
+    const interruptedTransform = running ? getComputedStyle(panel).transform : null;
+    const interruptedOpacity = running ? getComputedStyle(panel).opacity : null;
     if (desktopAnimation) desktopAnimation.cancel();
 
-    const closed = 'translate(-50%, calc(100% + 16px))';
-    const opened = 'translate(-50%, 0)';
+    const opened = welcome
+      ? 'translate(-50%, -50%) scale(1)'
+      : 'translate(-50%, 0)';
+    const closed = welcome
+      ? 'translate(-50%, -50%) scale(.94)'
+      : 'translate(-50%, calc(100% + 16px))';
     const from = interruptedTransform || (expanded ? closed : opened);
     const to = expanded ? opened : closed;
 
-    // Keep the panel visible during the downward journey, even when the
-    // builder controller immediately removes its open class on Windows.
     panel.style.visibility = 'visible';
-    if (!expanded) panel.style.pointerEvents = 'none';
+    panel.style.pointerEvents = expanded ? 'auto' : 'none';
 
-    const animation = panel.animate(
-      [{ transform: from }, { transform: to }],
-      { duration: expanded ? 510 : 490,
-        easing: expanded ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, .2, 1)',
-        fill: 'both' }
-    );
+    const frames = welcome ? [
+      { transform: from, opacity: interruptedOpacity ?? (expanded ? 0 : 1) },
+      { transform: to, opacity: expanded ? 1 : 0 }
+    ] : [
+      { transform: from },
+      { transform: to }
+    ];
+    const animation = panel.animate(frames, {
+      duration: welcome ? (expanded ? 450 : 530) : (expanded ? 510 : 490),
+      easing: expanded ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, .2, 1)',
+      fill: 'both'
+    });
     desktopAnimation = animation;
     animation.onfinish = () => {
       if (token !== desktopAnimationToken) return;
       animation.cancel();
       desktopAnimation = null;
-      panel.style.removeProperty('visibility');
-      panel.style.removeProperty('pointer-events');
+      // The question-builder controller removes its open class after 540 ms.
+      // Hide the closed welcome dialog until that cleanup to avoid a flash.
+      if (welcome && !expanded) {
+        panel.style.visibility = 'hidden';
+        panel.style.pointerEvents = 'none';
+      } else {
+        panel.style.removeProperty('visibility');
+        panel.style.removeProperty('pointer-events');
+      }
     };
   }
 
@@ -85,6 +99,6 @@
   // submit and new chat), not only mouse clicks on the icon.
   new MutationObserver(records => {
     if (!records.some(record => record.attributeName === 'aria-expanded')) return;
-    animateDesktop(toggle.getAttribute('aria-expanded') === 'true');
+    animatePanel(toggle.getAttribute('aria-expanded') === 'true');
   }).observe(toggle, { attributes: true, attributeFilter: ['aria-expanded'] });
 })();

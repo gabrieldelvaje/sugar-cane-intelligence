@@ -20,12 +20,12 @@
     whenReadyForBubble: () => bubbleHandoff
   };
 
-  function scheduleBubbleHandoff(animation) {
-    // The easing is strongly ease-out: at half the animation duration the
-    // composer has already traveled ~96% of the way to the footer. Trigger
-    // the bubble by actual visual progress, not a late wall-clock timeout.
-    // This works identically on desktop and mobile and stays synchronized
-    // when frames are delayed.
+  function scheduleBubbleHandoff(animation, duration) {
+    // The form's ease-out curve is already ~93% through its visual travel at
+    // 43% of elapsed time. Start the bubble there (about 290 ms desktop and
+    // 267 ms mobile), instead of waiting until the field seems to stop.
+    // Use the animation's own clock, not setTimeout or the ambiguous eased
+    // "progress" field, to keep both devices synchronized to actual frames.
     const settled = animation.finished.catch(() => {});
     dockFinished = settled;
     bubbleHandoff = new Promise(resolve => {
@@ -43,16 +43,13 @@
           release();
           return;
         }
-        const progress = animation.effect?.getComputedTiming()?.progress;
-        if (typeof progress === 'number' && progress >= .93) {
+        if (Number(animation.currentTime) >= duration * .43) {
           release();
           return;
         }
         frame = requestAnimationFrame(sample);
       };
       frame = requestAnimationFrame(sample);
-      // Also resolve if a pending animation is canceled or finishes before
-      // the next visual progress sample (for example in a background tab).
       settled.then(release);
     });
   }
@@ -102,7 +99,7 @@
         easing: 'cubic-bezier(.22, 1, .36, 1)'
       });
       const animation = moveAnimation;
-      scheduleBubbleHandoff(animation);
+      scheduleBubbleHandoff(animation, 620);
       animation.addEventListener('finish', () => {
         if (moveAnimation === animation) moveAnimation = null;
       }, { once: true });
@@ -136,7 +133,7 @@
       fill: 'both'
     });
     moveAnimation = animation;
-    scheduleBubbleHandoff(animation);
+    scheduleBubbleHandoff(animation, 680);
     form.style.transform = targetTransform;
     animation.addEventListener('finish', () => {
       if (moveAnimation !== animation) return;

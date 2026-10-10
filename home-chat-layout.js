@@ -12,10 +12,26 @@
   if (!hero || !slot || !form || !suggestions || !reset) return;
 
   let moveAnimation = null;
-  // Expose the current docking completion to the chat controller so the
-  // first user bubble waits for the composer to reach its footer position.
+  // Keep the completion signal and expose a slightly earlier handoff.
+  // Starting the user's bubble just before the composer finishes eliminates
+  // the perceived pause, while both animations retain their own timing.
   let dockFinished = Promise.resolve();
-  window.SCIComposerDock = { whenSettled: () => dockFinished };
+  let bubbleHandoff = Promise.resolve();
+  window.SCIComposerDock = {
+    whenSettled: () => dockFinished,
+    whenReadyForBubble: () => bubbleHandoff
+  };
+
+  function scheduleBubbleHandoff(animation, duration, leadMs = 145) {
+    // In background/reduced-timer situations, completion wins the race.
+    // Clear the timer afterward; a canceled animation also resolves promptly.
+    const settled = animation.finished.catch(() => {});
+    bubbleHandoff = new Promise(resolve => {
+      const timer = window.setTimeout(resolve, Math.max(0, duration - leadMs));
+      settled.then(() => { window.clearTimeout(timer); resolve(); });
+    });
+    dockFinished = settled;
+  }
   const desktop = () => window.matchMedia('(min-width: 651px)').matches;
   // Chat animations already run on desktop independently of the OS setting.
   // Match that behavior here; keep the working mobile preference untouched.
@@ -62,7 +78,7 @@
         easing: 'cubic-bezier(.22, 1, .36, 1)'
       });
       const animation = moveAnimation;
-      dockFinished = animation.finished.catch(() => {});
+      scheduleBubbleHandoff(animation, 620, 135);
       animation.addEventListener('finish', () => {
         if (moveAnimation === animation) moveAnimation = null;
       }, { once: true });
@@ -96,7 +112,7 @@
       fill: 'both'
     });
     moveAnimation = animation;
-    dockFinished = animation.finished.catch(() => {});
+    scheduleBubbleHandoff(animation, 680, 155);
     form.style.transform = targetTransform;
     animation.addEventListener('finish', () => {
       if (moveAnimation !== animation) return;

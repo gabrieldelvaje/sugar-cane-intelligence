@@ -24,8 +24,9 @@
   <link rel="stylesheet" href="question-scope.css?v=10">
   <link rel="stylesheet" href="question-correction.css?v=3">
   <link rel="stylesheet" href="question-correction-combobox.css?v=6">
+  <link rel="stylesheet" href="home-chat-layout.css?v=1">
 </head>
-<body>
+<body class="sci-home">
   <header class="topbar">
     <button class="brand-icon" id="new-chat" title="Novo chat" aria-label="Novo chat">🌱</button>
     <div class="brand-copy"><strong>Sugar Cane Intelligence</strong><span>Desenvolvido por Gabriel Delvaje</span></div>
@@ -33,8 +34,15 @@
   </header>
   <main class="page-shell">
     <section class="hero" id="home-hero">
-      <h1>O que você quer saber sobre a cana?</h1>
-      <p>Consulte produção, área, produtividade, temperatura, chuva, municípios e períodos.</p>
+      <h1>O que você deseja saber sobre a cana?</h1>
+      <p>Explore dados de produção, área colhida, produtividade e clima nos municípios brasileiros.</p>
+      <div class="sci-home-composer" id="home-composer">
+    <form class="question-bar" id="question-form">
+      <label class="sr-only" for="question">Sua pergunta</label>
+      <input id="question" autocomplete="off" placeholder="Pergunte sobre produção, clima ou municípios...">
+      <button type="submit" aria-label="Enviar pergunta"><svg class="submit-snake-loader submit-idle-arrow" viewBox="0 0 24 24" aria-hidden="true"><path class="submit-snake-shaft" d="M12 19 L12 9"></path><path class="submit-snake-head" d="M12.64 5.64 Q12 5 11.36 5.64 L8.64 8.36 Q8 9 8.95 9 L15.05 9 Q16 9 15.36 8.36 Z"></path></svg></button>
+    </form>
+      </div>
       <div class="suggestions" id="suggestions">
         <button class="sci-capability-suggestion">O que você pode fazer?</button>
         <button>Quais são os 5 municípios com maior produção em São Paulo?</button>
@@ -45,11 +53,6 @@
     <section class="status-card" id="loading-card" aria-live="polite"><span class="loader"></span><div><strong>Carregando base integrada</strong><small>PAM/IBGE + CRU TS, de 1974 a 2024.</small></div></section>
     <section id="conversation" class="conversation" aria-live="polite"></section>
   </main>
-  <form class="question-bar" id="question-form">
-    <label class="sr-only" for="question">Sua pergunta</label>
-    <input id="question" autocomplete="off" placeholder="Pergunte sobre produção, clima ou municípios...">
-    <button type="submit" aria-label="Enviar pergunta"><svg class="submit-snake-loader submit-idle-arrow" viewBox="0 0 24 24" aria-hidden="true"><path class="submit-snake-shaft" d="M12 19 L12 9"></path><path class="submit-snake-head" d="M12.64 5.64 Q12 5 11.36 5.64 L8.64 8.36 Q8 9 8.95 9 L15.05 9 Q16 9 15.36 8.36 Z"></path></svg></button>
-  </form>
   <template id="message-template"><article class="message"><div class="message-icon"></div><div class="message-content"></div></article></template>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script src="app.js?v=10"></script>
@@ -61,6 +64,7 @@
   <script src="single-year-municipality.js?v=1"></script>
   <script src="historical-line-charts.js?v=3"></script>
   <script src="ranking-bar-charts.js?v=3"></script>
+  <script src="home-chat-layout.js?v=1"></script>
   <script src="chat-ui-v5.js?v=36"></script>
   <script src="chat-staged-sections.js?v=2"></script>
   <script src="follow-up-entrance.js?v=2"></script>

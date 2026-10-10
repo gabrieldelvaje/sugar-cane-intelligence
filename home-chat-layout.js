@@ -38,6 +38,13 @@
     body.append(form);
     body.classList.remove('sci-home');
     const last = form.getBoundingClientRect();
+
+    // Do not show the fallback/legacy welcome screen while the composer
+    // descends. The same input is already safely reparented to <body>, so
+    // hide the entire welcome hero now, before the first animation frame.
+    // chat-ui-v5 waits for dockFinished before lifting the user bubble.
+    hero.hidden = true;
+
     if (!motionAllowed() || !first.width || !last.width || !form.animate) return;
 
     const dx = first.left - last.left;
@@ -99,7 +106,10 @@
 
   // Registered before chat-ui-v5's capture handlers. Docking happens before
   // that controller hides the hero, so the composer never disappears mid-send.
-  form.addEventListener('submit', dockComposer, true);
+  form.addEventListener('submit', () => {
+    // Empty submit must leave the welcome screen intact.
+    if (form.querySelector('#question')?.value.trim()) dockComposer();
+  }, true);
   suggestions.addEventListener('click', event => {
     if (event.target.closest('button') && suggestions.contains(event.target.closest('button')))
       dockComposer();

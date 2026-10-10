@@ -65,7 +65,7 @@ body.sci-home #home-hero .suggestions button:focus-visible {
   width: 100%;
   padding: 11px 16px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 9999px;
   background: transparent;
   box-shadow: none;
   text-align: left;
@@ -185,4 +185,35 @@ body.sci-home.question-builder-open #question-form {
     max-height: calc(100% - 16px);
     border-radius: 20px;
   }
+}
+
+
+/* Welcome suggestions: hover/focus is a rounded capsule, never a rectangle.
+   Keep the plain-text resting state and the green first-question emphasis. */
+body.sci-home #home-hero .suggestions button,
+body.sci-home #home-hero .suggestions button:hover,
+body.sci-home #home-hero .suggestions button:focus-visible {
+  border-radius: 9999px;
+}
+
+/* Regular end-of-answer suggestions are unboxed links at rest. Hovering
+   reveals a soft capsule without introducing permanent pills or changing
+   the existing two-column layout. Exclude correction/retry actions. */
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button {
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  box-shadow: none;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:hover,
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:focus-visible {
+  border-color: transparent;
+  border-radius: 9999px;
+  background: var(--answer-suggestion-hover-bg);
+  color: var(--text);
+}
+.conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }

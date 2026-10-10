@@ -47,15 +47,14 @@
       dockComposer();
   }, true);
 
-  // The existing reset handler reveals the hero and clears the conversation.
-  // Restore the live form after those handlers, before the next paint.
+  // Always restore the welcome layout on New chat, even when reset occurs
+  // while a chat animation is running. Do not gate on hero.hidden: depending
+  // on the order of reset listeners, the legacy code may unhide it afterward.
   reset.addEventListener('click', () => {
     moveAnimation?.cancel();
     moveAnimation = null;
-    queueMicrotask(() => {
-      if (hero.hidden) return;
-      slot.append(form);
-      body.classList.add('sci-home');
-    });
-  }, true);
+    slot.append(form);
+    body.classList.add('sci-home');
+    hero.hidden = false;
+  });
 })();

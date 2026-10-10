@@ -609,10 +609,10 @@
     input.disabled = true;
     submit.disabled = true;
 
-    // On the very first question, the welcome composer slides into its
-    // footer dock. Wait for that exact animation to finish before revealing
-    // and lifting the user's message; subsequent messages are immediate.
-    await (window.SCIComposerDock?.whenSettled?.() ?? Promise.resolve());
+    // Overlap the final part of the initial composer descent with the
+    // user's upward bubble animation. No separate waiting frame or pause.
+    // Regular follow-up messages still start immediately.
+    await (window.SCIComposerDock?.whenReadyForBubble?.() ?? Promise.resolve());
     if (!active()) return;
 
     setSubmitLoading(true);

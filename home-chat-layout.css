@@ -139,3 +139,50 @@ body.sci-home #loading-card.is-visible {
 @media (prefers-reduced-motion: reduce) {
   body.sci-home #home-hero .suggestions button { transition: none; }
 }
+
+
+/* Only the welcome screen centers its guided question builder. The regular
+   conversation continues using the existing clipped, bottom-docked slide. */
+body.sci-home .qb-slide-viewport {
+  inset: 72px 0 0;
+  overflow: hidden;
+}
+body.sci-home .qb-slide-viewport > .question-builder-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  bottom: auto;
+  width: min(820px, calc(100% - 32px));
+  height: min(500px, calc(100dvh - 120px));
+  max-height: calc(100% - 24px);
+  transform: translate(-50%, -50%) scale(.94);
+  transform-origin: center center;
+  border-radius: 24px;
+}
+body.sci-home.question-builder-open .qb-slide-viewport > .question-builder-panel {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+/* The welcome modal uses Web Animations for an in-place expansion, not the
+   existing upward slide keyframes (including on mobile). */
+body.sci-home .qb-slide-viewport > .question-builder-panel.qb-panel-opening,
+body.sci-home .qb-slide-viewport > .question-builder-panel.qb-panel-closing {
+  animation: none !important;
+}
+body.sci-home .qb-slide-viewport > .question-builder-panel.qb-panel-closing {
+  pointer-events: none;
+}
+/* The centered composer must sit behind the modal while it is open. */
+body.sci-home.question-builder-open #question-form {
+  z-index: 18;
+}
+@media (max-width: 650px) {
+  body.sci-home .qb-slide-viewport > .question-builder-panel {
+    width: calc(100% - 20px);
+    height: min(500px, calc(100dvh - 112px));
+    max-height: calc(100% - 16px);
+    border-radius: 20px;
+  }
+}

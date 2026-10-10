@@ -609,30 +609,37 @@
     input.disabled = true;
     submit.disabled = true;
 
-    // Overlap the final part of the initial composer descent with the
-    // user's upward bubble animation. No separate waiting frame or pause.
-    // Regular follow-up messages still start immediately.
-    await (window.SCIComposerDock?.whenReadyForBubble?.() ?? Promise.resolve());
-    if (!active()) return;
-
-    setSubmitLoading(true);
+    // Build the first bubble and settle the chat layout WHILE the composer
+    // descends. Keeping the bubble invisible prevents any intermediate flash
+    // and eliminates the DOM/layout work that used to delay its entrance.
+    const firstQuestion = conversation.children.length === 0;
     hero.hidden = true;
     page.classList.add('chat-started');
-
     const user = message('user');
+    user.style.visibility = 'hidden';
     const userContent = user.querySelector('.message-content');
     const text = document.createElement('p');
     text.textContent = prompt;
     userContent.append(text);
     bottom();
+
+    if (firstQuestion) {
+      // The composer signals when its eased movement is visually almost
+      // docked, rather than after a fixed timeout. Both motions now overlap.
+      await (window.SCIComposerDock?.whenReadyForBubble?.() ?? Promise.resolve());
+      if (!active()) return;
+    }
+
+    setSubmitLoading(true);
     const field = form.getBoundingClientRect();
     const bubble = userContent.getBoundingClientRect();
     const dx = Math.max(-36, Math.min(36, field.right - bubble.right));
     const dy = Math.max(24, field.top - bubble.top + 16);
+    user.style.removeProperty('visibility');
     await animate(user, [
-      { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(.95)` },
+      { opacity: firstQuestion ? .1 : 0, transform: `translate(${dx}px, ${dy}px) scale(.95)` },
       { opacity: 1, transform: 'translate(0, 0) scale(1)' }
-    ], { duration: 530 });
+    ], { duration: firstQuestion ? 470 : 530 });
     if (!active()) return;
 
     const typing = message('assistant');

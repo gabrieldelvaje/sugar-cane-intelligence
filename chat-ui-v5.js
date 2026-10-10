@@ -608,6 +608,13 @@
     input.value = '';
     input.disabled = true;
     submit.disabled = true;
+
+    // On the very first question, the welcome composer slides into its
+    // footer dock. Wait for that exact animation to finish before revealing
+    // and lifting the user's message; subsequent messages are immediate.
+    await (window.SCIComposerDock?.whenSettled?.() ?? Promise.resolve());
+    if (!active()) return;
+
     setSubmitLoading(true);
     hero.hidden = true;
     page.classList.add('chat-started');

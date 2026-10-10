@@ -12,14 +12,13 @@
   if (!hero || !slot || !form || !suggestions || !reset) return;
 
   let moveAnimation = null;
-  let moveFrame = 0;
-  const motionAllowed = () =>
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const desktop = () => window.matchMedia('(min-width: 651px)').matches;
+  // Chat animations already run on desktop independently of the OS setting.
+  // Match that behavior here; keep the working mobile preference untouched.
+  const motionAllowed = () =>
+    desktop() || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function clearMove() {
-    if (moveFrame) cancelAnimationFrame(moveFrame);
-    moveFrame = 0;
     moveAnimation?.cancel();
     moveAnimation = null;
     form.style.removeProperty('transform');
@@ -72,28 +71,24 @@
     form.style.willChange = 'transform';
     form.style.transform = startTransform;
 
-    // Start on the next frame: the first position is guaranteed to exist
-    // before the hero is removed by the normal question controller.
-    moveFrame = requestAnimationFrame(() => {
-      moveFrame = 0;
-      if (body.classList.contains('sci-home')) return;
-      const animation = form.animate([
-        { transform: startTransform },
-        { transform: targetTransform }
-      ], {
-        duration: 680,
-        easing: 'cubic-bezier(.22, 1, .36, 1)',
-        fill: 'both'
-      });
-      moveAnimation = animation;
-      form.style.transform = targetTransform;
-      animation.addEventListener('finish', () => {
-        if (moveAnimation !== animation) return;
-        // The inline target equals the original dock transform; cleaning
-        // the inline styles therefore cannot cause a final-frame flash.
-        clearMove();
-      }, { once: true });
+    // Start the Web Animation synchronously in the submission event.
+    // Waiting for requestAnimationFrame can expose the docked position for
+    // one frame on desktop, especially with Windows animation reduction.
+    // 'fill: both' holds the inverted starting geometry before the first paint.
+    const animation = form.animate([
+      { transform: startTransform },
+      { transform: targetTransform }
+    ], {
+      duration: 680,
+      easing: 'cubic-bezier(.22, 1, .36, 1)',
+      fill: 'both'
     });
+    moveAnimation = animation;
+    form.style.transform = targetTransform;
+    animation.addEventListener('finish', () => {
+      if (moveAnimation !== animation) return;
+      clearMove();
+    }, { once: true });
   }
 
   // Registered before chat-ui-v5's capture handlers. Docking happens before

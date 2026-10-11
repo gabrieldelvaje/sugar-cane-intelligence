@@ -94,11 +94,11 @@
 /* Frosted-ice composer: translucent on both the welcome screen and chat.
    Blur the content behind the pill, while keeping the text input truly clear.
    WebKit prefix is needed for the glass treatment on iOS Safari. */
-/* Light glass needs less tint and blur to avoid a milky veil. */
+/* Moderate light glass softens content behind the composer. */
 :root {
   --sci-glass-color: 255 255 255;
-  --sci-glass-opacity: .03;
-  --sci-glass-filter: blur(6px) saturate(110%);
+  --sci-glass-opacity: .08;
+  --sci-glass-filter: blur(10px) saturate(110%);
 }
 [data-theme="dark"] {
   --sci-glass-color: 21 31 42;
@@ -109,13 +109,6 @@
   background: var(--bg);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-}
-@media (max-width: 650px) {
-  .topbar {
-    background: rgb(var(--sci-glass-color) / var(--sci-glass-opacity));
-    -webkit-backdrop-filter: var(--sci-glass-filter);
-    backdrop-filter: var(--sci-glass-filter);
-  }
 }
 .question-bar {
   border: 2px solid rgba(143, 166, 182, .15);

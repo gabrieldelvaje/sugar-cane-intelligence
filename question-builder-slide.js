@@ -75,16 +75,21 @@
     panel.style.visibility = 'visible';
     panel.style.pointerEvents = expanded ? 'auto' : 'none';
 
-    const frames = welcome ? [
+    const frames = welcome ? (expanded ? [
       { transform: from, opacity: interruptedOpacity ?? 1 },
       { transform: to, opacity: 1 }
     ] : [
+      { transform: from, opacity: interruptedOpacity ?? 1, offset: 0 },
+      // Fade out during the return, before the miniature meets the trigger.
+      { opacity: 0, offset: .65 },
+      { transform: to, opacity: 0, offset: 1 }
+    ]) : [
       { transform: from },
       { transform: to }
     ];
     const animation = panel.animate(frames, {
-      duration: !isDesktop() && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : (welcome ? 500 : (expanded ? 510 : 490)),
-      easing: expanded ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, .2, 1)',
+      duration: !isDesktop() && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : (welcome ? (expanded ? 500 : 280) : (expanded ? 510 : 490)),
+      easing: (welcome || expanded) ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, .2, 1)',
       fill: 'both'
     });
     desktopAnimation = animation;

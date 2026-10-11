@@ -57,9 +57,18 @@
     const opened = welcome
       ? 'translate(-50%, -50%) scale(1)'
       : 'translate(-50%, 0)';
-    const closed = welcome
-      ? 'translate(-50%, -50%) scale(.94)'
-      : 'translate(-50%, calc(100% + 16px))';
+    // Use layout dimensions, unaffected by an interrupted transform, to map
+    // the welcome dialog precisely to its trigger on any viewport size.
+    let closed = 'translate(-50%, calc(100% + 16px))';
+    if (welcome) {
+      const trigger = toggle.getBoundingClientRect();
+      const viewport = stage.getBoundingClientRect();
+      const dx = trigger.left + trigger.width / 2 - (viewport.left + viewport.width / 2);
+      const dy = trigger.top + trigger.height / 2 - (viewport.top + viewport.height / 2);
+      const sx = trigger.width / Math.max(1, panel.offsetWidth);
+      const sy = trigger.height / Math.max(1, panel.offsetHeight);
+      closed = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${sx}, ${sy})`;
+    }
     const from = interruptedTransform || (expanded ? closed : opened);
     const to = expanded ? opened : closed;
 
@@ -67,14 +76,14 @@
     panel.style.pointerEvents = expanded ? 'auto' : 'none';
 
     const frames = welcome ? [
-      { transform: from, opacity: interruptedOpacity ?? (expanded ? 0 : 1) },
-      { transform: to, opacity: expanded ? 1 : 0 }
+      { transform: from, opacity: interruptedOpacity ?? 1 },
+      { transform: to, opacity: 1 }
     ] : [
       { transform: from },
       { transform: to }
     ];
     const animation = panel.animate(frames, {
-      duration: welcome ? (expanded ? 450 : 530) : (expanded ? 510 : 490),
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : (welcome ? (expanded ? 500 : 500) : (expanded ? 510 : 490)),
       easing: expanded ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, .2, 1)',
       fill: 'both'
     });

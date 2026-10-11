@@ -88,7 +88,7 @@
       { transform: to }
     ];
     const animation = panel.animate(frames, {
-      duration: !isDesktop() && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : (welcome ? (expanded ? 500 : 280) : (expanded ? 510 : 490)),
+      duration: !isDesktop() && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : (welcome ? 500 : (expanded ? 510 : 490)),
       easing: (welcome || expanded) ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, .2, 1)',
       fill: 'both'
     });

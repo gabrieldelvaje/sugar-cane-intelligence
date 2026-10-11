@@ -260,7 +260,9 @@
 
     open = next;
     const token = ++panelTransitionToken;
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // Desktop builder motion is intentional even when OS animations are reduced.
+    const reducedMotion = !window.matchMedia('(min-width: 651px)').matches &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     hideResults('first'); hideResults('second');
     toggle.setAttribute('aria-expanded', String(next));

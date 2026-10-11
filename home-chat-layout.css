@@ -216,3 +216,15 @@ body.sci-home #home-hero .suggestions button:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
+
+/* Follow-up pills use corresponding neutral surfaces in dark mode. */
+[data-theme="dark"] .conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button {
+  background: #262626;
+  color: #f0f0f0;
+  border: 0;
+}
+[data-theme="dark"] .conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:hover,
+[data-theme="dark"] .conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:focus-visible {
+  background: #333333;
+  color: #f0f0f0;
+}

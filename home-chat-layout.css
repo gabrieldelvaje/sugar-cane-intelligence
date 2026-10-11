@@ -196,13 +196,12 @@ body.sci-home #home-hero .suggestions button:focus-visible {
   border-radius: 9999px;
 }
 
-/* Regular end-of-answer suggestions are unboxed links at rest. Hovering
-   reveals a soft capsule without introducing permanent pills or changing
-   the existing two-column layout. Exclude correction/retry actions. */
+/* Soft light-gray follow-up pills. Exclude correction/retry actions. */
 .conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button {
-  border: 1px solid transparent;
+  border: 0;
   border-radius: 9999px;
-  background: transparent;
+  background: #f0f0f0;
+  color: #252525;
   box-shadow: none;
   transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
@@ -210,8 +209,8 @@ body.sci-home #home-hero .suggestions button:focus-visible {
 .conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:focus-visible {
   border-color: transparent;
   border-radius: 9999px;
-  background: var(--answer-suggestion-hover-bg);
-  color: var(--text);
+  background: #e7e7e7;
+  color: #252525;
 }
 .conversation .message.assistant .follow-up-suggestions:not(.positive-comparison-retry) button:focus-visible {
   outline: 2px solid var(--brand);
